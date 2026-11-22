@@ -1,0 +1,89 @@
+.ai-scanner {
+    &__button {
+        align-items: center;
+        background: linear-gradient(145deg, #ff72c6, #ec3da8);
+        border: 0.3rem solid #fff0a6;
+        border-radius: 50%;
+        box-shadow: 0 0.8rem 2.4rem rgb(236 61 168 / 45%);
+        color: #fff;
+        cursor: grab;
+        display: flex;
+        flex-direction: column;
+        height: 6rem;
+        justify-content: center;
+        position: fixed;
+        touch-action: none;
+        user-select: none;
+        width: 6rem;
+        z-index: 999;
+
+        &:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+
+        span {
+            font-size: 1.7rem;
+            font-weight: 900;
+        }
+
+        small {
+            font-size: 0.8rem;
+        }
+
+        &--scanning {
+            animation: ai-scanner-pulse 1s ease-in-out infinite;
+        }
+    }
+
+    &__result {
+        background: #092454;
+        border: 1px solid #d9b84f;
+        border-radius: 1rem;
+        bottom: 9.2rem;
+        box-shadow: 0 1.2rem 3.2rem rgb(2 16 43 / 55%);
+        color: #fff;
+        max-width: 32rem;
+        padding: 1.4rem;
+        position: fixed;
+        right: 1.6rem;
+        z-index: 998;
+
+        strong { color: #ffd84d; }
+        p { line-height: 1.5; }
+    }
+
+    &__close {
+        background: transparent;
+        border: 0;
+        color: #fff;
+        cursor: pointer;
+        float: right;
+        font-size: 1.8rem;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 0.8rem;
+
+        button {
+            background: #ffd84d;
+            border: 0;
+            border-radius: 0.5rem;
+            color: #092454;
+            cursor: pointer;
+            font-weight: 800;
+            padding: 0.8rem 1rem;
+
+            &:last-child {
+                background: #fff;
+            }
+
+            &:disabled { opacity: 0.55; }
+        }
+    }
+}
+
+@keyframes ai-scanner-pulse {
+    50% { box-shadow: 0 0 2.8rem rgb(255 114 198 / 85%); }
+}

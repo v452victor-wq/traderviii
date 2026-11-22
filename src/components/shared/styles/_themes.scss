@@ -38,13 +38,13 @@
     /* Brand colors - dynamically generated from brand.config.json */
     --brand-white: #ffffff;
     --brand-dark-grey: #0f172a;
-    --brand-red-coral: #3b82f6; /* legacy compatibility */
-    --brand-orange: #8b5cf6; /* legacy compatibility */
+    --brand-red-coral: #d9b84f; /* legacy compatibility */
+    --brand-orange: #ffd84d; /* legacy compatibility */
 
     /* Dynamic brand colors (set by brand configuration) */
-    --brand-primary: #3b82f6;
-    --brand-secondary: #64748b;
-    --brand-tertiary: #8b5cf6;
+    --brand-primary: #d9b84f;
+    --brand-secondary: #1f63ad;
+    --brand-tertiary: #ffd84d;
     --brand-success: #10b981;
     --brand-danger: #ef4444;
     --brand-warning: #f59e0b;
@@ -52,7 +52,7 @@
     --brand-neutral: #6b7280;
 
     /* Brand typography - dynamically generated from brand.config.json */
-    --brand-font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --brand-font-primary: Inter;
     --brand-font-secondary: Georgia, 'Times New Roman', Times, serif;
     --brand-font-monospace: 'Courier New', Courier, monospace;
     /* [/AI] */
@@ -66,12 +66,12 @@
 
     .theme--light {
         // General
-        --general-main-1: #{constants.$color-white};
-        --general-main-2: #{constants.$color-white};
-        --general-main-3: #{constants.$color-grey-1};
+        --general-main-1: #f7faff;
+        --general-main-2: #eef4fc;
+        --general-main-3: #dce8f8;
         --general-main-4: #{constants.$alpha-color-white-4};
-        --general-section-1: #{constants.$color-grey-2};
-        --general-section-2: #{constants.$color-grey-2};
+        --general-section-1: #edf4fd;
+        --general-section-2: #e4eefb;
         --general-section-3: #{constants.$color-grey-11};
         --general-section-4: #{constants.$color-grey-12};
         --general-section-5: #{constants.$color-grey-2};
@@ -81,10 +81,10 @@
         --general-active: #{constants.$color-grey-5};
 
         // Icons and Texts
-        --text-general: #{constants.$color-black-1};
+        --text-general: #17304f;
         --text-primary: #{constants.$color-grey-1};
         --text-less-prominent: #{constants.$color-grey-1};
-        --text-prominent: #{constants.$color-black-1};
+        --text-prominent: #092454;
         --text-disabled: #{constants.$color-grey-1};
         --text-disabled-1: #{constants.$color-grey-6};
         --text-loss-danger: #{constants.$color-red-1};
@@ -213,12 +213,12 @@
 
     .theme--dark {
         // General
-        --general-main-1: #{constants.$color-black};
-        --general-main-2: #{constants.$color-black-3};
-        --general-main-3: #{constants.$color-black-4};
+        --general-main-1: #071a3d;
+        --general-main-2: #0d2c64;
+        --general-main-3: #12366f;
         --general-main-4: #{constants.$alpha-color-black-7};
-        --general-section-1: #{constants.$color-black-3};
-        --general-section-2: #{constants.$color-black};
+        --general-section-1: #102e62;
+        --general-section-2: #092454;
         --general-section-3: #{constants.$color-black-5};
         --general-section-4: #{constants.$color-black-5};
         --general-section-5: #{constants.$color-black-5};

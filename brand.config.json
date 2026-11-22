@@ -7,9 +7,9 @@
     },
     "domain_name": "YourBrand.com",
     "colors": {
-        "primary": "#d9942e",
-        "secondary": "#64748b",
-        "tertiary": "#8b5cf6",
+        "primary": "#d9b84f",
+        "secondary": "#1f63ad",
+        "tertiary": "#ffd84d",
         "success": "#10b981",
         "danger": "#ef4444",
         "warning": "#f59e0b",

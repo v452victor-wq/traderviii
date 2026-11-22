@@ -42,6 +42,9 @@ import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
+import FreeBots from '../free-bots/free-bots';
+import AnalysisTool from '../chart/analysis-tool';
+import AiScannerButton from '../chart/ai-scanner-button';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -78,7 +81,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'analysis_tool', 'free_bot', 'chart', 'tutorial'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -406,6 +409,18 @@ const AppWrapper = observer(() => {
                                 id='id-bot-builder'
                             />
                             <div
+                                label={<Localize i18n_default_text='Analysis Tool' />}
+                                id='id-analysis-tool'
+                            >
+                                <AnalysisTool />
+                            </div>
+                            <div
+                                label={<Localize i18n_default_text='Free Bot' />}
+                                id='id-free-bots'
+                            >
+                                <FreeBots />
+                            </div>
+                            <div
                                 label={
                                     <>
                                         <LabelPairedChartLineCaptionRegularIcon
@@ -457,6 +472,7 @@ const AppWrapper = observer(() => {
                     </div>
                 </div>
             </div>
+            <AiScannerButton />
             <DesktopWrapper>
                 <div className='main__run-strategy-wrapper'>
                     <RunStrategy />

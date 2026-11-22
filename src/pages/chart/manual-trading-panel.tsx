@@ -7,10 +7,8 @@ import { localize } from '@deriv-com/translations';
 import {
     buildDigitProposalRequest,
     DIGIT_CONTRACT_TYPES,
-    getDigitDistribution,
 } from './digit-analysis';
 import type { DigitContractType } from './digit-analysis';
-import LiveDigitVisualizer from './live-digit-visualizer';
 
 type TManualSymbol = {
     display_name?: string;
@@ -66,13 +64,11 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
     const [takeProfit, setTakeProfit] = useState('');
     const [martingaleEnabled, setMartingaleEnabled] = useState(false);
     const [martingaleMultiplier, setMartingaleMultiplier] = useState('2');
-    const [scannerResult, setScannerResult] = useState('');
-    const [isScanning, setIsScanning] = useState(false);
     const [proposal, setProposal] = useState<TProposal | null>(null);
-    const [analysisPrices, setAnalysisPrices] = useState<Array<number | string>>([]);
-    const [analysisPrecision, setAnalysisPrecision] = useState(2);
-    const [analysisLoading, setAnalysisLoading] = useState(false);
-    const [analysisError, setAnalysisError] = useState('');
+    const [, setAnalysisPrices] = useState<Array<number | string>>([]);
+    const [, setAnalysisPrecision] = useState(2);
+    const [, setAnalysisLoading] = useState(false);
+    const [, setAnalysisError] = useState('');
     const [isQuoting, setIsQuoting] = useState(false);
     const [isBuying, setIsBuying] = useState(false);
     const [message, setMessage] = useState('');
@@ -105,15 +101,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                 .filter(item => item.symbol),
         [activeSymbols]
     );
-
-    const selectedMarket = syntheticSymbols.find(item => item.symbol === selectedSymbol);
-    const distribution = useMemo(
-        () => getDigitDistribution(analysisPrices, analysisPrecision),
-        [analysisPrices, analysisPrecision]
-    );
-    const totalTicks = analysisPrices.length;
-    const evenCount = distribution.filter(item => item.digit % 2 === 0).reduce((total, item) => total + item.count, 0);
-    const oddCount = totalTicks - evenCount;
 
     useEffect(() => {
         if (syntheticSymbols.length === 0) return;
@@ -429,75 +416,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
     const formatAmount = (amount: number) =>
         new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(amount);
 
-    const scanLiveMarkets = async () => {
-        if (!api_base.api) {
-            setScannerResult(localize('The Deriv market connection is not ready.'));
-            return;
-        }
-
-        setIsScanning(true);
-        setScannerResult('');
-        const candidates = syntheticSymbols.filter(item =>
-            /^(R_|1HZ|JD)/i.test(item.symbol)
-        ).slice(0, 12);
-
-        try {
-            const results = await Promise.all(candidates.map(async item => {
-                const response = await api_base.api!.send({
-                    ticks_history: item.symbol,
-                    count: 100,
-                    end: 'latest',
-                    style: 'ticks',
-                });
-                const data = isRecord(response) ? response : null;
-                const history = isRecord(data?.history) ? data.history : null;
-                const prices = Array.isArray(history?.prices)
-                    ? history.prices.filter((price): price is number | string =>
-                        typeof price === 'number' || typeof price === 'string'
-                    )
-                    : [];
-                const distribution = getDigitDistribution(prices, item.pipSize ?? 2);
-                const total = prices.length;
-                const even = distribution.filter(({ digit, count }) => digit % 2 === 0).reduce((sum, { count }) => sum + count, 0);
-                const odd = total - even;
-                const strongest = distribution.reduce((best, current) => current.count > best.count ? current : best, distribution[0]);
-                const weakest = distribution.reduce((best, current) => current.count < best.count ? current : best, distribution[0]);
-                const evenShare = total ? even / total : 0;
-                const oddShare = total ? odd / total : 0;
-                const contractType: DigitContractType =
-                    evenShare >= 0.55 ? 'DIGITODD' :
-                    oddShare >= 0.55 ? 'DIGITEVEN' :
-                    strongest.count >= weakest.count * 1.15 ? 'DIGITOVER' : 'DIGITUNDER';
-                const barrier = strongest.count >= weakest.count
-                    ? Math.min(8, Math.max(0, strongest.digit))
-                    : weakest.digit;
-                const score = Math.abs(evenShare - oddShare) + (total ? (strongest.count - weakest.count) / total : 0);
-                return { item, contractType, barrier, score };
-            }));
-
-            const best = results.sort((a, b) => b.score - a.score)[0];
-            if (!best) throw new Error(localize('No live Volatility or Jump market was available.'));
-            setSelectedSymbol(best.item.symbol);
-            setContractType(best.contractType);
-            setBarrier(String(best.barrier));
-            onSymbolChange(best.item.symbol);
-            invalidateQuote();
-            setScannerResult(
-                `${best.item.name}: ${CONTRACT_LABELS[best.contractType]}${
-                    best.contractType === 'DIGITEVEN' || best.contractType === 'DIGITODD'
-                        ? ''
-                        : ` ${best.barrier}`
-                } — ${localize('Recommended next step: Run')} (${localize('Get trade quote')})`
-            );
-        } catch (scannerError) {
-            setScannerResult(
-                scannerError instanceof Error ? scannerError.message : localize('The live market scan could not be completed.')
-            );
-        } finally {
-            setIsScanning(false);
-        }
-    };
-
     return (
         <aside className='manual-trading-panel' aria-label={localize('Manual trading and digit analysis')}>
             <section className='manual-trading-card'>
@@ -512,8 +430,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                             : localize('REAL account — real money is at risk')
                         : localize('Log in to enable trading.')}
                 </p>
-                <LiveDigitVisualizer prices={analysisPrices} pipSize={analysisPrecision} />
-
                 <label>
                     {localize('Synthetic index')}
                     <select
@@ -658,18 +574,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                 <button
                     className='manual-trading-button'
                     type='button'
-                    onClick={scanLiveMarkets}
-                    disabled={isScanning || syntheticSymbols.length === 0}
-                >
-                    {isScanning ? localize('Scanning live markets…') : localize('AI Scanner')}
-                </button>
-                {scannerResult && (
-                    <p className='manual-trading-feedback' role='status'>{scannerResult}</p>
-                )}
-
-                <button
-                    className='manual-trading-button'
-                    type='button'
                     onClick={handleGetQuote}
                     disabled={isQuoting || isBuying || !client.is_logged_in || !selectedSymbol}
                 >
@@ -706,39 +610,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                 )}
             </section>
 
-            <section className='manual-trading-card manual-trading-analysis'>
-                <h2>{localize('Analysis Tool — Live Last Digit Visualizer')}</h2>
-                <p className='manual-trading-caption'>
-                    {selectedMarket?.name || selectedSymbol} · {localize('last 100 ticks')}
-                </p>
-                {analysisLoading && <p>{localize('Loading tick history…')}</p>}
-                {analysisError && (
-                    <p className='manual-trading-feedback manual-trading-feedback--error'>{analysisError}</p>
-                )}
-                {!analysisLoading && !analysisError && (
-                    <>
-                        <p className='manual-trading-analysis__sample'>
-                            {localize('Sample size')}: {totalTicks}
-                        </p>
-                        <div className='manual-trading-analysis__parity'>
-                            <span>
-                                {localize('Even')}: {evenCount} (
-                                {totalTicks ? Math.round((evenCount / totalTicks) * 100) : 0}%)
-                            </span>
-                            <span>
-                                {localize('Odd')}: {oddCount} (
-                                {totalTicks ? Math.round((oddCount / totalTicks) * 100) : 0}%)
-                            </span>
-                        </div>
-                        <LiveDigitVisualizer prices={analysisPrices} pipSize={analysisPrecision} />
-                        <p className='manual-trading-caption'>
-                            {localize(
-                                'Historical digit frequency is descriptive only and does not predict future results.'
-                            )}
-                        </p>
-                    </>
-                )}
-            </section>
         </aside>
     );
 });
