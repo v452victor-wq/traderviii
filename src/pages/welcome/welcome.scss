@@ -1,6 +1,5 @@
 .welcome-page {
-    --welcome-navy: #071528;
-    --welcome-blue: #0e2d50;
+    --welcome-black: #080808;
     --welcome-gold: #f2c65d;
     --welcome-yellow: #fff0bd;
 
@@ -11,9 +10,7 @@
     overflow: hidden;
     padding: 2.8rem 7.2%;
     color: #f8f6f0;
-    background:
-        radial-gradient(ellipse at 74% 44%, rgb(31 77 118 / 37%), transparent 37%),
-        linear-gradient(130deg, #061326 0%, var(--welcome-navy) 45%, #0c2644 100%);
+    background: radial-gradient(ellipse at 74% 44%, rgb(242 198 93 / 7%), transparent 37%), var(--welcome-black);
     font-family: var(--brand-font-primary), sans-serif;
 
     &::before {
@@ -22,7 +19,7 @@
         right: 0;
         width: 52%;
         height: 100%;
-        background: linear-gradient(110deg, transparent, rgb(15 45 80 / 26%));
+        background: linear-gradient(110deg, transparent, rgb(255 255 255 / 2%));
         content: '';
         pointer-events: none;
     }
@@ -55,7 +52,7 @@
         border: 1px solid rgb(242 198 93 / 65%);
         border-radius: 1.1rem;
         color: var(--welcome-yellow);
-        background: linear-gradient(145deg, rgb(242 198 93 / 25%), rgb(14 45 80 / 65%));
+        background: linear-gradient(145deg, rgb(242 198 93 / 25%), rgb(0 0 0 / 90%));
         font-size: 1.7rem;
     }
 
@@ -125,7 +122,7 @@
     &__description {
         max-width: 46rem;
         margin: 2.5rem 0 0;
-        color: #bac8d8;
+        color: #b8b8b8;
         font-size: 1.6rem;
         line-height: 1.8;
     }
@@ -146,7 +143,7 @@
         padding: 0 2.4rem;
         border: 1px solid var(--welcome-gold);
         border-radius: 0.8rem;
-        color: #13243a;
+        color: #111;
         background: linear-gradient(110deg, var(--welcome-yellow), var(--welcome-gold));
         box-shadow: 0 1rem 3.5rem rgb(242 198 93 / 15%);
         font-size: 1.4rem;
@@ -168,7 +165,7 @@
     }
 
     &__note {
-        color: #91a6bd;
+        color: #aaa;
         font-size: 1.2rem;
     }
 
@@ -184,7 +181,7 @@
         width: min(42rem, 90%);
         aspect-ratio: 1;
         border-radius: 50%;
-        background: radial-gradient(circle, rgb(242 198 93 / 11%), rgb(29 76 118 / 11%) 40%, transparent 70%);
+        background: radial-gradient(circle, rgb(242 198 93 / 11%), rgb(242 198 93 / 3%) 40%, transparent 70%);
         filter: blur(1rem);
     }
 
@@ -192,9 +189,9 @@
         position: relative;
         width: min(55rem, 100%);
         padding: 2.2rem 2.4rem 1.7rem;
-        border: 1px solid rgb(190 207 223 / 15%);
+        border: 1px solid rgb(255 255 255 / 15%);
         border-radius: 1.6rem;
-        background: linear-gradient(145deg, rgb(19 44 72 / 93%), rgb(8 25 44 / 94%));
+        background: linear-gradient(145deg, #1a1a1a, #101010);
         box-shadow:
             0 2.5rem 7rem rgb(0 0 0 / 32%),
             inset 0 1px rgb(255 255 255 / 5%);
@@ -211,7 +208,7 @@
     &__chart-label,
     &__chart-period {
         display: block;
-        color: #8ba1b9;
+        color: #aaa;
         font-size: 0.9rem;
         font-weight: 700;
         letter-spacing: 0.16em;
@@ -251,16 +248,16 @@
                 to bottom,
                 transparent 0,
                 transparent calc(25% - 1px),
-                rgb(172 193 214 / 9%) calc(25% - 1px),
-                rgb(172 193 214 / 9%) 25%
+                rgb(255 255 255 / 9%) calc(25% - 1px),
+                rgb(255 255 255 / 9%) 25%
             );
         }
     }
 
     &__chart-bottom {
         padding-top: 1.5rem;
-        border-top: 1px solid rgb(190 207 223 / 11%);
-        color: #8299b2;
+        border-top: 1px solid rgb(255 255 255 / 11%);
+        color: #aaa;
         font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.12em;
@@ -277,7 +274,7 @@
         border: 1px solid rgb(255 240 189 / 16%);
         border-radius: 0.9rem;
         color: #e8dfc7;
-        background: rgb(12 35 60 / 92%);
+        background: rgb(20 20 20 / 92%);
         box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%);
         font-size: 1.1rem;
 
@@ -288,8 +285,8 @@
 
     &__footer {
         padding-top: 1.6rem;
-        border-top: 1px solid rgb(190 207 223 / 12%);
-        color: #8398ae;
+        border-top: 1px solid rgb(255 255 255 / 12%);
+        color: #aaa;
         font-size: 1rem;
     }
 

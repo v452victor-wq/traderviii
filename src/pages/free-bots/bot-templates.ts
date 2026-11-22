@@ -26,35 +26,63 @@ export const buildMasterBotXml = (
     bot: Omit<MasterBotTemplate, 'xml'>,
     settings: MasterBotSettings
 ) => {
-    const count = Math.max(1, Math.min(100, Math.floor(settings.consecutiveTicks)));
     const ticks = Math.max(1, Math.min(50, Math.floor(settings.tickDuration)));
     const stake = Math.max(0.01, Number(settings.stake) || 1);
     const barrier = settings.targetDigit ?? 5;
-    const predictionBlock =
-        bot.contractType === 'DIGITUNDER' || bot.contractType === 'DIGITOVER' ||
-        bot.contractType === 'DIGITDIFF'
-            ? `<value name="PREDICTION"><block type="math_number"><field name="NUM">${barrier}</field></block></value>`
-            : '';
+    const hasPrediction =
+        bot.contractType === 'DIGITUNDER' ||
+        bot.contractType === 'DIGITOVER' ||
+        bot.contractType === 'DIGITDIFF';
+    const tradeType =
+        bot.contractType === 'DIGITODD' || bot.contractType === 'DIGITEVEN'
+            ? 'evenodd'
+            : bot.contractType === 'DIGITUNDER' || bot.contractType === 'DIGITOVER'
+              ? 'overunder'
+              : 'matchesdiffers';
+    const predictionBlock = hasPrediction
+        ? `<value name="PREDICTION"><block type="math_number"><field name="NUM">${barrier}</field></block></value>`
+        : '';
 
     return `<xml xmlns="http://www.w3.org/1999/xhtml" collection="false" is_dbot="true">
-  <variables>
-    <variable type="" id="consecutive_ticks" islocal="false" iscloud="false">master_bot:consecutive_ticks</variable>
-    <variable type="" id="initial_stake" islocal="false" iscloud="false">master_bot:initial_stake</variable>
-  </variables>
-  <block type="trade" id="master_trade" x="0" y="0">
-    <statement name="SUBMARKET">
-      <block type="market" id="master_market">
-        <field name="MARKET_LIST">volidx</field>
+  <block type="trade_definition" id="master_trade" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="master_market">
+        <field name="MARKET_LIST">synthetic_index</field>
         <field name="SUBMARKET_LIST">random_index</field>
         <field name="SYMBOL_LIST">${escapeXml(settings.symbol)}</field>
-        <field name="TRADETYPECAT_LIST">digits</field>
-        <field name="TRADETYPE_LIST">${bot.contractType === 'DIGITDIFF' ? 'matchesdiffers' : 'digits'}</field>
-        <field name="TYPE_LIST">both</field>
-        <field name="CANDLEINTERVAL_LIST">60</field>
+        <next>
+          <block type="trade_definition_tradetype" id="master_trade_type">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">${tradeType}</field>
+            <next>
+              <block type="trade_definition_contracttype" id="master_contract_type">
+                <field name="TYPE_LIST">${bot.contractType}</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="master_candle_interval">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="master_restart_buy_sell">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="master_restart_on_error">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="master_trade_options">
+        <mutation has_first_barrier="false" has_second_barrier="false" has_prediction="${hasPrediction}"></mutation>
         <field name="DURATIONTYPE_LIST">t</field>
-        <field name="PAYOUTTYPE_LIST">stake</field>
         <field name="CURRENCY_LIST">USD</field>
-        <field name="RESTARTONERROR">TRUE</field>
         <value name="DURATION"><block type="math_number"><field name="NUM">${ticks}</field></block></value>
         <value name="AMOUNT"><block type="math_number"><field name="NUM">${stake}</field></block></value>
         ${predictionBlock}
@@ -63,14 +91,8 @@ export const buildMasterBotXml = (
   </block>
   <block type="before_purchase" id="master_before" x="0" y="268">
     <statement name="BEFOREPURCHASE_STACK">
-      <block type="variables_set" id="master_count">
-        <field name="VAR" id="consecutive_ticks" variabletype="">master_bot:consecutive_ticks</field>
-        <value name="VALUE"><block type="math_number"><field name="NUM">${count}</field></block></value>
-        <next>
-          <block type="purchase" id="master_purchase">
-            <field name="PURCHASE_LIST">${bot.contractType}</field>
-          </block>
-        </next>
+      <block type="purchase" id="master_purchase">
+        <field name="PURCHASE_LIST">${bot.contractType}</field>
       </block>
     </statement>
   </block>
@@ -79,14 +101,6 @@ export const buildMasterBotXml = (
       <block type="trade_again" id="master_again"></block>
     </statement>
   </block>
-  <metadata>
-    <bot_name>${escapeXml(bot.name)}</bot_name>
-    <consecutive_ticks>${count}</consecutive_ticks>
-    <stop_loss>${Math.max(0, Number(settings.stopLoss) || 0)}</stop_loss>
-    <take_profit>${Math.max(0, Number(settings.takeProfit) || 0)}</take_profit>
-    <martingale>${settings.martingale ? 'true' : 'false'}</martingale>
-    <martingale_multiplier>${Math.max(1.01, Number(settings.martingaleMultiplier) || 2)}</martingale_multiplier>
-  </metadata>
 </xml>`;
 };
 

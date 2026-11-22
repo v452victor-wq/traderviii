@@ -1,6 +1,6 @@
 .free-bots {
     box-sizing: border-box;
-    background: linear-gradient(145deg, #071a3d 0%, #0d2c64 100%);
+    background: #080808;
     color: #fff;
     height: 100%;
     overflow-y: auto;
@@ -11,13 +11,13 @@
         max-width: 100rem;
 
         h1 {
-            color: #fff7b2;
+            color: #f2c65d;
             font-size: 2.4rem;
             margin: 0 0 0.8rem;
         }
 
         p {
-            color: #dbe9ff;
+            color: #c8c8c8;
             font-size: 1.4rem;
             line-height: 1.5;
             margin: 0.8rem 0;
@@ -53,7 +53,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            color: #dbe9ff;
+            color: #c8c8c8;
             font-size: 1.2rem;
         }
 
@@ -63,7 +63,7 @@
             padding: 0.6rem 0.8rem;
             border: 1px solid #d9b84f;
             border-radius: 0.4rem;
-            background: #102e62;
+            background: #171717;
             color: #fff;
         }
     }
@@ -87,7 +87,7 @@
     }
 
     &__card {
-        background: rgb(255 255 255 / 8%);
+        background: rgb(255 255 255 / 6%);
         border: 1px solid rgb(217 184 79 / 70%);
         border-radius: 0.8rem;
         display: flex;
@@ -100,7 +100,7 @@
         }
 
         p {
-            color: #dbe9ff;
+            color: #c8c8c8;
             flex: 1;
             font-size: 1.3rem;
             line-height: 1.5;
@@ -125,8 +125,8 @@
     }
 
     &__button {
-        background: #ffd84d;
-        color: #092454;
+        background: #f2c65d;
+        color: #111;
         font-weight: 600;
 
         &:disabled {
@@ -136,7 +136,7 @@
     }
 
     &__download {
-        background: #102e62;
+        background: #171717;
         border: 1px solid #d9b84f;
         color: #fff;
     }

@@ -58,7 +58,7 @@ const FreeBots = observer(() => {
         });
 
         try {
-            await load_modal.loadStrategyToBuilder(
+            const loaded = await load_modal.loadStrategyToBuilder(
                 {
                     id: strategyId,
                     name: bot.name,
@@ -69,7 +69,7 @@ const FreeBots = observer(() => {
                 false
             );
 
-            if (workspace.current_strategy_id !== strategyId) {
+            if (!loaded || workspace.current_strategy_id !== strategyId) {
                 throw new Error(localize('The selected bot could not be loaded. Please try another template.'));
             }
 
