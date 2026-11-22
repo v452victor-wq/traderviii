@@ -1,5 +1,5 @@
 .analysis-tool {
-    background: linear-gradient(145deg, #071a3d 0%, #0d2c64 100%);
+    background: #080808;
     box-sizing: border-box;
     color: #fff;
     height: 100%;
@@ -14,7 +14,7 @@
         max-width: 96rem;
 
         h1 {
-            color: #fff7b2;
+            color: #f2c65d;
             font-size: 2.4rem;
             margin: 0.4rem 0 0;
         }
@@ -27,7 +27,7 @@
         }
 
         select {
-            background: #102e62;
+            background: #171717;
             border: 1px solid #d9b84f;
             border-radius: 0.6rem;
             color: #fff;
@@ -38,7 +38,7 @@
     }
 
     &__eyebrow {
-        color: #ffd84d;
+        color: #f2c65d;
         font-size: 1.1rem;
         font-weight: 800;
         letter-spacing: 0.12em;
@@ -57,11 +57,11 @@
         display: flex;
         gap: 2.4rem;
         margin-bottom: 1.6rem;
-        color: #dbe9ff;
+        color: #d0d0d0;
     }
 
     &__note {
-        color: #dbe9ff;
+        color: #aaa;
         font-size: 1.2rem;
         text-align: center;
     }
@@ -89,7 +89,7 @@
         &__circle {
             align-items: center;
             aspect-ratio: 1;
-            background: #12366f;
+            background: #171717;
             border: 0.25rem solid #d9b84f;
             border-radius: 50%;
             display: flex;
@@ -99,28 +99,41 @@
             transition: 180ms ease;
             width: 100%;
 
-            strong { font-size: 2.4rem; color: #fff7b2; }
-            small { color: #dbe9ff; }
+            strong { font-size: 2.4rem; color: #f2c65d; }
+            small { color: #d0d0d0; }
+        }
+
+        &__item--high &__circle {
+            background: rgb(46 204 113 / 14%);
+            border-color: #2ecc71;
+
+            small { color: #2ecc71; }
+        }
+
+        &__item--low &__circle {
+            background: rgb(255 82 82 / 12%);
+            border-color: #ff5252;
+
+            small { color: #ff6b6b; }
         }
 
         &__item--active &__circle {
-            background: #ffd84d;
-            border-color: #fff7b2;
-            box-shadow: 0 0 2.4rem rgb(255 216 77 / 55%);
+            border-color: #f2c65d;
+            box-shadow: 0 0 2.4rem rgb(242 198 93 / 35%);
             transform: scale(1.1);
-
-            strong { color: #092454; }
-            small { color: #092454; }
         }
 
         &__pointer {
             color: transparent;
             height: 2rem;
             line-height: 2rem;
+            transition:
+                color 180ms ease,
+                transform 180ms ease;
         }
 
         &__item--active &__pointer {
-            color: #ffd84d;
+            color: #f2c65d;
             transform: translateY(0.3rem);
         }
     }

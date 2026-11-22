@@ -1,4 +1,4 @@
-import { buildDigitProposalRequest, getDigitDistribution } from './digit-analysis';
+import { buildDigitProposalRequest, getDigitDistribution, getLastDigit } from './digit-analysis';
 
 describe('getDigitDistribution', () => {
     it('counts last digits using the symbol precision, including trailing zeroes', () => {
@@ -9,6 +9,14 @@ describe('getDigitDistribution', () => {
 
     it('returns zero counts for an empty history', () => {
         expect(getDigitDistribution([], 2).every(({ count }) => count === 0)).toBe(true);
+    });
+});
+
+describe('getLastDigit', () => {
+    it('uses the symbol precision and rejects invalid prices', () => {
+        expect(getLastDigit(12.3, 2)).toBe(0);
+        expect(getLastDigit(5.67, 2)).toBe(7);
+        expect(getLastDigit('invalid', 2)).toBeNull();
     });
 });
 

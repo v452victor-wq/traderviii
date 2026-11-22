@@ -9,16 +9,20 @@ export const DIGIT_CONTRACT_TYPES = [
 
 export type DigitContractType = (typeof DIGIT_CONTRACT_TYPES)[number];
 
+export const getLastDigit = (price: number | string, pipSize: number) => {
+    const precision = Number.isInteger(pipSize) && pipSize >= 0 && pipSize <= 10 ? pipSize : 2;
+    const formattedPrice = Number(price).toFixed(precision);
+    const lastDigit = Number(formattedPrice.replace('.', '').slice(-1));
+
+    return Number.isInteger(lastDigit) && lastDigit >= 0 && lastDigit <= 9 ? lastDigit : null;
+};
+
 export const getDigitDistribution = (prices: Array<number | string>, pipSize: number) => {
     const digits = Array.from({ length: 10 }, (_, digit) => ({ digit, count: 0 }));
-    const precision = Number.isInteger(pipSize) && pipSize >= 0 && pipSize <= 10 ? pipSize : 2;
 
     prices.forEach(price => {
-        const formattedPrice = Number(price).toFixed(precision);
-        const lastCharacter = formattedPrice.replace('.', '').slice(-1);
-        const lastDigit = Number(lastCharacter);
-
-        if (Number.isInteger(lastDigit) && lastDigit >= 0 && lastDigit <= 9) {
+        const lastDigit = getLastDigit(price, pipSize);
+        if (lastDigit !== null) {
             digits[lastDigit].count += 1;
         }
     });

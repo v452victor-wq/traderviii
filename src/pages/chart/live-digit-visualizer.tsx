@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getDigitDistribution } from './digit-analysis';
+import { getDigitDistribution, getLastDigit } from './digit-analysis';
 
 type LiveDigitVisualizerProps = {
     prices: Array<number | string>;
@@ -8,17 +8,13 @@ type LiveDigitVisualizerProps = {
 
 const LiveDigitVisualizer = ({ prices, pipSize }: LiveDigitVisualizerProps) => {
     const distribution = useMemo(() => getDigitDistribution(prices, pipSize), [prices, pipSize]);
-    const total = prices.length;
+    const total = distribution.reduce((sum, { count }) => sum + count, 0);
     const highest = total ? Math.max(...distribution.map(({ count }) => count)) : 0;
     const lowest = total ? Math.min(...distribution.map(({ count }) => count)) : 0;
-    const latestDigit = useMemo(() => {
-        if (!prices.length) return null;
-        const price = Number(prices[prices.length - 1]);
-        if (!Number.isFinite(price)) return null;
-        const precision = Number.isInteger(pipSize) && pipSize >= 0 && pipSize <= 10 ? pipSize : 2;
-        const text = price.toFixed(precision).replace('.', '');
-        return Number(text.slice(-1));
-    }, [prices, pipSize]);
+    const latestDigit = useMemo(
+        () => (prices.length ? getLastDigit(prices[prices.length - 1], pipSize) : null),
+        [prices, pipSize]
+    );
 
     return (
         <div className='live-digit-visualizer' aria-label='Live last digit frequency'>
@@ -27,7 +23,7 @@ const LiveDigitVisualizer = ({ prices, pipSize }: LiveDigitVisualizerProps) => {
                     {distribution.slice(row * 5, row * 5 + 5).map(({ digit, count }) => {
                         const percentage = total ? (count / total) * 100 : 0;
                         const isHigh = total > 0 && count === highest;
-                        const isLow = total > 0 && count === lowest;
+                        const isLow = total > 0 && count === lowest && count < highest;
                         const isActive = latestDigit === digit;
                         return (
                             <div

@@ -36,6 +36,7 @@ const AnalysisTool = observer(() => {
         if (!api || !symbol) return;
         let cancelled = false;
         let subscriptionId: string | undefined;
+        let latestTick: number | string | undefined;
         setLoading(true);
         setError('');
         setPrices([]);
@@ -43,6 +44,7 @@ const AnalysisTool = observer(() => {
         const messageSubscription = api.onMessage().subscribe((message: any) => {
             const tick = message?.data?.tick;
             if (message?.data?.msg_type === 'tick' && tick?.symbol === symbol) {
+                latestTick = tick.quote;
                 setPrices(current => [...current, tick.quote].slice(-100));
                 if (typeof tick.pip_size === 'number') setPipSize(tick.pip_size);
             }
@@ -56,7 +58,10 @@ const AnalysisTool = observer(() => {
                 subscriptionId = response?.subscription?.id;
                 if (!Array.isArray(history)) throw new Error(localize('No tick history was returned.'));
                 setPipSize(typeof response.pip_size === 'number' ? response.pip_size : pipSize);
-                setPrices(history.filter((price: unknown) => typeof price === 'number' || typeof price === 'string').slice(-100));
+                const validHistory = history.filter(
+                    (price: unknown) => typeof price === 'number' || typeof price === 'string'
+                );
+                setPrices((latestTick === undefined ? validHistory : [...validHistory, latestTick]).slice(-100));
             })
             .catch((requestError: unknown) => {
                 if (!cancelled) setError(requestError instanceof Error ? requestError.message : localize('Could not load tick history.'));
