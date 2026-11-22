@@ -125,6 +125,77 @@
         margin: 0 0 0.8rem;
     }
 
+    .live-digit-visualizer {
+        display: grid;
+        gap: 1.2rem;
+        padding: 0.8rem 0 0.4rem;
+        width: 100%;
+
+        &__row {
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: repeat(5, minmax(4.2rem, 1fr));
+        }
+
+        &__item {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        &__circle {
+            align-items: center;
+            aspect-ratio: 1;
+            background: var(--general-section-1);
+            border: 0.2rem solid var(--border-normal);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 6.4rem;
+            transition: border-color 180ms ease, transform 220ms ease, box-shadow 220ms ease;
+            width: 100%;
+
+            strong {
+                font-size: clamp(1.4rem, 2.2vw, 2rem);
+            }
+
+            small {
+                font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+            }
+        }
+
+        &__item--high &__circle {
+            border-color: var(--status-success);
+            box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--status-success) 18%, transparent);
+        }
+
+        &__item--low &__circle {
+            border-color: var(--status-danger);
+        }
+
+        &__item--active &__circle {
+            transform: scale(1.12);
+            box-shadow: 0 0 1.2rem color-mix(in srgb, var(--brand-primary) 35%, transparent);
+        }
+
+        &__pointer {
+            color: transparent;
+            font-size: 1.2rem;
+            height: 1.4rem;
+            line-height: 1.4rem;
+            margin-top: 0.2rem;
+            transition: color 220ms ease, transform 220ms ease;
+        }
+
+        &__item--active &__pointer {
+            color: var(--brand-primary);
+            transform: translateY(0.2rem);
+        }
+    }
+
     &__parity {
         display: flex;
         justify-content: space-between;

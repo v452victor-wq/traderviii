@@ -1,0 +1,161 @@
+.free-bots {
+    box-sizing: border-box;
+    color: var(--text-prominent);
+    height: 100%;
+    overflow-y: auto;
+    padding: 2.4rem;
+
+    &__header {
+        margin: 0 auto 2.4rem;
+        max-width: 100rem;
+
+        h1 {
+            font-size: 2.4rem;
+            margin: 0 0 0.8rem;
+        }
+
+        p {
+            color: var(--text-general);
+            font-size: 1.4rem;
+            line-height: 1.5;
+            margin: 0.8rem 0;
+        }
+    }
+
+    &__warning {
+        border-inline-start: 0.3rem solid var(--status-warning);
+        padding-inline-start: 1rem;
+    }
+
+    &__grid {
+        display: grid;
+        gap: 1.6rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
+        margin: 0 auto;
+        max-width: 100rem;
+    }
+
+    &__settings {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+        margin: 0 auto 1.6rem;
+        max-width: 100rem;
+        padding: 1.2rem;
+        background: var(--general-main-1);
+        border: 1px solid var(--border-normal);
+        border-radius: 0.8rem;
+
+        label,
+        &__count {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: var(--text-general);
+            font-size: 1.2rem;
+        }
+
+        input,
+        select {
+            min-height: 3.6rem;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-normal);
+            border-radius: 0.4rem;
+            background: var(--general-section-1);
+            color: var(--text-prominent);
+        }
+    }
+
+    &__count {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        color: var(--text-general);
+        font-size: 1.2rem;
+        margin-bottom: 1.2rem;
+
+        input {
+            min-height: 3.6rem;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-normal);
+            border-radius: 0.4rem;
+            background: var(--general-section-1);
+            color: var(--text-prominent);
+        }
+    }
+
+    &__card {
+        background: var(--general-main-1);
+        border: 1px solid var(--border-normal);
+        border-radius: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        padding: 1.6rem;
+
+        h2 {
+            font-size: 1.6rem;
+            margin: 0 0 0.8rem;
+        }
+
+        p {
+            color: var(--text-general);
+            flex: 1;
+            font-size: 1.3rem;
+            line-height: 1.5;
+            margin: 0 0 1.6rem;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    &__button,
+    &__download {
+        border: 0;
+        border-radius: 0.4rem;
+        cursor: pointer;
+        font: inherit;
+        min-height: 3.8rem;
+        padding: 0.8rem 1.2rem;
+    }
+
+    &__button {
+        background: var(--brand-primary);
+        color: var(--text-prominent);
+        font-weight: 600;
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+    }
+
+    &__download {
+        background: var(--general-section-1);
+        color: var(--text-prominent);
+    }
+
+    &__feedback {
+        color: var(--status-success);
+        font-size: 1.3rem;
+        margin: 1.6rem auto 0;
+        max-width: 100rem;
+
+        &--error {
+            color: var(--status-danger);
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .free-bots {
+        padding: 1.6rem;
+
+        &__actions {
+            flex-direction: column;
+        }
+    }
+}
