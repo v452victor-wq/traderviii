@@ -100,6 +100,8 @@ contracts.
 `netlify.toml` configures Netlify to run `npm run build` and publish `dist/`. Push to
 the branch connected to your Netlify site to trigger its configured deploy.
 
+The root route (`/`) is the ViiTrader welcome page; the trading app is available at `/trade`.
+
 ## Google Drive integration (optional)
 
 Saving/loading strategies to Google Drive stays disabled unless `GD_CLIENT_ID`,
