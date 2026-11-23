@@ -22,7 +22,7 @@ describe('LiveDigitVisualizer', () => {
         expect(items[9].children[0]).toHaveClass('live-digit-visualizer__circle');
         expect(items[9].children[1]).toHaveClass('live-digit-visualizer__pointer');
 
-        rerender(<LiveDigitVisualizer prices={[12.31, 13.31, 14.39, 15.92]} pipSize={2} tickSequence={1} />);
+        rerender(<LiveDigitVisualizer prices={[12.31, 13.31, 14.39, 15.92]} pipSize={2} />);
         items = container.querySelectorAll('.live-digit-visualizer__item');
 
         expect(items[9]).not.toHaveClass('live-digit-visualizer__item--active');

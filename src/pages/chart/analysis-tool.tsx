@@ -28,7 +28,6 @@ const AnalysisTool = observer(() => {
     const [symbol, setSymbol] = useState(markets[0]?.symbol || '');
     const [prices, setPrices] = useState<Array<number | string>>([]);
     const [pipSize, setPipSize] = useState(markets[0]?.pipSize || 2);
-    const [tickSequence, setTickSequence] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -42,7 +41,6 @@ const AnalysisTool = observer(() => {
         setLoading(true);
         setError('');
         setPrices([]);
-        setTickSequence(0);
 
         const forgetSubscription = () => {
             if (!subscriptionId) return;
@@ -58,7 +56,6 @@ const AnalysisTool = observer(() => {
                 if (!historyLoaded) pendingTicks.push(tick.quote);
                 else setPrices(current => [...current, tick.quote].slice(-100));
                 if (pendingTicks.length > 100) pendingTicks.shift();
-                setTickSequence(current => current + 1);
                 if (typeof tick.pip_size === 'number') setPipSize(tick.pip_size);
             }
         });
@@ -125,7 +122,7 @@ const AnalysisTool = observer(() => {
                             <span>{localize('Even')}: <strong>{even}</strong></span>
                             <span>{localize('Odd')}: <strong>{odd}</strong></span>
                         </div>
-                        <LiveDigitVisualizer prices={prices} pipSize={pipSize} tickSequence={tickSequence} />
+                        <LiveDigitVisualizer prices={prices} pipSize={pipSize} />
                         <p className='analysis-tool__note'>
                             {localize('The moving pointer shows the active latest digit. Historical frequency is descriptive and does not predict future results.')}
                         </p>

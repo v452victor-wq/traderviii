@@ -70,7 +70,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
     const [analysisPrecision, setAnalysisPrecision] = useState(2);
     const [analysisLoading, setAnalysisLoading] = useState(false);
     const [analysisError, setAnalysisError] = useState('');
-    const [tickSequence, setTickSequence] = useState(0);
     const [isQuoting, setIsQuoting] = useState(false);
     const [isBuying, setIsBuying] = useState(false);
     const [message, setMessage] = useState('');
@@ -151,7 +150,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
         setAnalysisLoading(true);
         setAnalysisError('');
         setAnalysisPrices([]);
-        setTickSequence(0);
 
         const messageSubscription = api.onMessage().subscribe((message: unknown) => {
             const data = isRecord(message) && isRecord(message.data) ? message.data : null;
@@ -166,7 +164,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
 
             if (typeof tick.pip_size === 'number') setAnalysisPrecision(tick.pip_size);
             const nextTick = tick.quote;
-            setTickSequence(current => current + 1);
 
             if (!historyLoaded) {
                 pendingTicks = [...pendingTicks, nextTick].slice(-100);
@@ -626,7 +623,6 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                     <LiveDigitVisualizer
                         prices={analysisPrices}
                         pipSize={analysisPrecision}
-                        tickSequence={tickSequence}
                     />
                 )}
             </section>

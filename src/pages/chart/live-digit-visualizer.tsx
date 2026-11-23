@@ -4,10 +4,9 @@ import { getDigitDistribution, getLastDigit } from './digit-analysis';
 type LiveDigitVisualizerProps = {
     prices: Array<number | string>;
     pipSize: number;
-    tickSequence?: number;
 };
 
-const LiveDigitVisualizer = ({ prices, pipSize, tickSequence = 0 }: LiveDigitVisualizerProps) => {
+const LiveDigitVisualizer = ({ prices, pipSize }: LiveDigitVisualizerProps) => {
     const distribution = useMemo(() => getDigitDistribution(prices, pipSize), [prices, pipSize]);
     const total = distribution.reduce((sum, { count }) => sum + count, 0);
     const highest = total ? Math.max(...distribution.map(({ count }) => count)) : 0;
@@ -42,7 +41,6 @@ const LiveDigitVisualizer = ({ prices, pipSize, tickSequence = 0 }: LiveDigitVis
                                 </span>
                                 <span
                                     className='live-digit-visualizer__pointer'
-                                    key={`${digit}-${tickSequence}`}
                                     aria-hidden='true'
                                 >
                                     ▲
