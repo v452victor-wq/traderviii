@@ -37,6 +37,30 @@ const BotBuilder = observer(() => {
     }, [onMount, onUnmount]);
 
     React.useEffect(() => {
+        if (active_tab !== 1) return;
+
+        let resizeFrame = 0;
+        const revealFrame = requestAnimationFrame(() => {
+            resizeFrame = requestAnimationFrame(() => {
+                const workspace = window.Blockly?.derivWorkspace;
+                if (!workspace) return;
+
+                try {
+                    workspace.render();
+                    window.Blockly.svgResize(workspace);
+                } catch (error) {
+                    console.error('Failed to render the Bot Builder workspace after navigation:', error);
+                }
+            });
+        });
+
+        return () => {
+            cancelAnimationFrame(revealFrame);
+            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+        };
+    }, [active_tab, is_loading]);
+
+    React.useEffect(() => {
         const workspace = window.Blockly?.derivWorkspace;
         if (workspace && is_running && !is_blockly_listener_registered.current) {
             is_blockly_listener_registered.current = true;

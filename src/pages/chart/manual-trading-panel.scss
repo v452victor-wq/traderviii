@@ -126,15 +126,27 @@
     }
 
     .live-digit-visualizer {
+        --ring-radius: min(10rem, 28vw);
+
+        aspect-ratio: 1;
         display: grid;
-        gap: 1.2rem;
-        padding: 0.8rem 0 0.4rem;
+        margin: 0 auto;
+        max-width: 30rem;
+        place-items: center;
+        position: relative;
         width: 100%;
 
+        &::before {
+            border: 1px solid color-mix(in srgb, var(--brand-primary) 35%, transparent);
+            border-radius: 50%;
+            content: '';
+            inset: 20%;
+            position: absolute;
+        }
+
         &__row {
-            display: grid;
-            gap: 0.6rem;
-            grid-template-columns: repeat(5, minmax(4.2rem, 1fr));
+            inset: 0;
+            position: absolute;
         }
 
         &__item {
@@ -142,7 +154,14 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
-            position: relative;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            transform:
+                translate(-50%, -50%)
+                rotate(var(--digit-angle))
+                translateY(calc(0rem - var(--ring-radius)))
+                rotate(var(--digit-counter-angle));
         }
 
         &__circle {
@@ -154,9 +173,9 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            max-width: 6.4rem;
+            max-width: clamp(2.8rem, 14vw, 5.6rem);
             transition: border-color 180ms ease, transform 220ms ease, box-shadow 220ms ease;
-            width: 100%;
+            width: clamp(2.8rem, 14vw, 5.6rem);
 
             strong {
                 font-size: clamp(1.4rem, 2.2vw, 2rem);
@@ -187,12 +206,26 @@
             height: 1.4rem;
             line-height: 1.4rem;
             margin-top: 0.2rem;
-            transition: color 220ms ease, transform 220ms ease;
+            opacity: 0;
+            transform: translateY(0.5rem);
+            transition: color 220ms ease, opacity 220ms ease, transform 220ms ease;
         }
 
         &__item--active &__pointer {
             color: var(--brand-primary);
-            transform: translateY(0.2rem);
+            opacity: 1;
+            transform: translateY(0);
+            animation: live-digit-pointer 260ms ease-out;
+        }
+
+        &__center {
+            color: var(--text-prominent);
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            line-height: 1.6;
+            position: relative;
+            text-align: center;
         }
     }
 

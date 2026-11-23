@@ -28,6 +28,7 @@ const AnalysisTool = observer(() => {
     const [symbol, setSymbol] = useState(markets[0]?.symbol || '');
     const [prices, setPrices] = useState<Array<number | string>>([]);
     const [pipSize, setPipSize] = useState(markets[0]?.pipSize || 2);
+    const [tickSequence, setTickSequence] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -36,34 +37,51 @@ const AnalysisTool = observer(() => {
         if (!api || !symbol) return;
         let cancelled = false;
         let subscriptionId: string | undefined;
-        let latestTick: number | string | undefined;
+        const pendingTicks: Array<number | string> = [];
+        let historyLoaded = false;
         setLoading(true);
         setError('');
         setPrices([]);
+        setTickSequence(0);
+
+        const forgetSubscription = () => {
+            if (!subscriptionId) return;
+            api.send({ forget: subscriptionId }).catch((unsubscribeError: unknown) => {
+                console.error('Failed to unsubscribe from Analysis Tool tick data:', unsubscribeError);
+            });
+            subscriptionId = undefined;
+        };
 
         const messageSubscription = api.onMessage().subscribe((message: any) => {
             const tick = message?.data?.tick;
             if (message?.data?.msg_type === 'tick' && tick?.symbol === symbol) {
-                latestTick = tick.quote;
-                setPrices(current => [...current, tick.quote].slice(-100));
+                if (!historyLoaded) pendingTicks.push(tick.quote);
+                else setPrices(current => [...current, tick.quote].slice(-100));
+                if (pendingTicks.length > 100) pendingTicks.shift();
+                setTickSequence(current => current + 1);
                 if (typeof tick.pip_size === 'number') setPipSize(tick.pip_size);
             }
         });
 
         api.send({ ticks_history: symbol, count: 100, end: 'latest', style: 'ticks', subscribe: 1 })
             .then((response: any) => {
-                if (cancelled) return;
+                subscriptionId = response?.subscription?.id;
+                if (cancelled) {
+                    forgetSubscription();
+                    return;
+                }
                 if (response?.error) throw new Error(response.error.message);
                 const history = response?.history?.prices;
-                subscriptionId = response?.subscription?.id;
                 if (!Array.isArray(history)) throw new Error(localize('No tick history was returned.'));
                 setPipSize(typeof response.pip_size === 'number' ? response.pip_size : pipSize);
                 const validHistory = history.filter(
                     (price: unknown) => typeof price === 'number' || typeof price === 'string'
                 );
-                setPrices((latestTick === undefined ? validHistory : [...validHistory, latestTick]).slice(-100));
+                setPrices([...validHistory, ...pendingTicks].slice(-100));
+                historyLoaded = true;
             })
             .catch((requestError: unknown) => {
+                forgetSubscription();
                 if (!cancelled) setError(requestError instanceof Error ? requestError.message : localize('Could not load tick history.'));
             })
             .finally(() => {
@@ -73,7 +91,7 @@ const AnalysisTool = observer(() => {
         return () => {
             cancelled = true;
             messageSubscription.unsubscribe();
-            if (subscriptionId) api.send({ forget: subscriptionId }).catch(() => undefined);
+            forgetSubscription();
         };
     }, [symbol]);
 
@@ -107,7 +125,7 @@ const AnalysisTool = observer(() => {
                             <span>{localize('Even')}: <strong>{even}</strong></span>
                             <span>{localize('Odd')}: <strong>{odd}</strong></span>
                         </div>
-                        <LiveDigitVisualizer prices={prices} pipSize={pipSize} />
+                        <LiveDigitVisualizer prices={prices} pipSize={pipSize} tickSequence={tickSequence} />
                         <p className='analysis-tool__note'>
                             {localize('The moving pointer shows the active latest digit. Historical frequency is descriptive and does not predict future results.')}
                         </p>

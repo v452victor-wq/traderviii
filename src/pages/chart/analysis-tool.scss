@@ -71,19 +71,41 @@
     }
 
     .live-digit-visualizer {
+        --ring-radius: min(12rem, 32vw);
+
+        aspect-ratio: 1;
         display: grid;
-        gap: 1.6rem;
+        margin: 0 auto;
+        max-width: 38rem;
+        place-items: center;
+        position: relative;
+        width: 100%;
+
+        &::before {
+            border: 1px solid rgb(217 184 79 / 35%);
+            border-radius: 50%;
+            content: '';
+            inset: 20%;
+            position: absolute;
+        }
 
         &__row {
-            display: grid;
-            gap: 1.2rem;
-            grid-template-columns: repeat(5, minmax(5.4rem, 1fr));
+            inset: 0;
+            position: absolute;
         }
 
         &__item {
             align-items: center;
             display: flex;
             flex-direction: column;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            transform:
+                translate(-50%, -50%)
+                rotate(var(--digit-angle))
+                translateY(calc(0rem - var(--ring-radius)))
+                rotate(var(--digit-counter-angle));
         }
 
         &__circle {
@@ -95,12 +117,12 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            max-width: 8.8rem;
+            max-width: clamp(3rem, 16vw, 7.2rem);
             transition: 180ms ease;
-            width: 100%;
+            width: clamp(3rem, 16vw, 7.2rem);
 
-            strong { font-size: 2.4rem; color: #f2c65d; }
-            small { color: #d0d0d0; }
+            strong { color: #f2c65d; font-size: clamp(1.2rem, 4vw, 2.4rem); }
+            small { color: #d0d0d0; font-size: clamp(0.7rem, 2vw, 1.1rem); }
         }
 
         &__item--high &__circle {
@@ -120,22 +142,49 @@
         &__item--active &__circle {
             border-color: #f2c65d;
             box-shadow: 0 0 2.4rem rgb(242 198 93 / 35%);
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
 
         &__pointer {
             color: transparent;
             height: 2rem;
             line-height: 2rem;
+            opacity: 0;
+            transform: translateY(0.5rem);
             transition:
                 color 180ms ease,
+                opacity 180ms ease,
                 transform 180ms ease;
         }
 
         &__item--active &__pointer {
             color: #f2c65d;
-            transform: translateY(0.3rem);
+            opacity: 1;
+            transform: translateY(0);
+            animation: live-digit-pointer 260ms ease-out;
         }
+
+        &__center {
+            color: #f2c65d;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            line-height: 1.6;
+            position: relative;
+            text-align: center;
+        }
+    }
+}
+
+@keyframes live-digit-pointer {
+    from {
+        opacity: 0.35;
+        transform: translateY(0.8rem) scale(0.85);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -152,6 +201,15 @@
         &__header select { min-width: 100%; }
         &__panel { padding: 1.2rem; }
         &__stats { flex-wrap: wrap; gap: 0.8rem 1.6rem; }
-        .live-digit-visualizer__row { gap: 0.4rem; }
+        .live-digit-visualizer {
+            --ring-radius: min(10rem, 29vw);
+
+            max-width: 34rem;
+        }
+
+        .live-digit-visualizer__circle {
+            max-width: clamp(2.8rem, 14vw, 5.6rem);
+            width: clamp(2.8rem, 14vw, 5.6rem);
+        }
     }
 }

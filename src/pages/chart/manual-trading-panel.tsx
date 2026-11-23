@@ -9,6 +9,7 @@ import {
     DIGIT_CONTRACT_TYPES,
 } from './digit-analysis';
 import type { DigitContractType } from './digit-analysis';
+import LiveDigitVisualizer from './live-digit-visualizer';
 
 type TManualSymbol = {
     display_name?: string;
@@ -65,10 +66,11 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
     const [martingaleEnabled, setMartingaleEnabled] = useState(false);
     const [martingaleMultiplier, setMartingaleMultiplier] = useState('2');
     const [proposal, setProposal] = useState<TProposal | null>(null);
-    const [, setAnalysisPrices] = useState<Array<number | string>>([]);
-    const [, setAnalysisPrecision] = useState(2);
-    const [, setAnalysisLoading] = useState(false);
-    const [, setAnalysisError] = useState('');
+    const [analysisPrices, setAnalysisPrices] = useState<Array<number | string>>([]);
+    const [analysisPrecision, setAnalysisPrecision] = useState(2);
+    const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
+    const [tickSequence, setTickSequence] = useState(0);
     const [isQuoting, setIsQuoting] = useState(false);
     const [isBuying, setIsBuying] = useState(false);
     const [message, setMessage] = useState('');
@@ -149,6 +151,7 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
         setAnalysisLoading(true);
         setAnalysisError('');
         setAnalysisPrices([]);
+        setTickSequence(0);
 
         const messageSubscription = api.onMessage().subscribe((message: unknown) => {
             const data = isRecord(message) && isRecord(message.data) ? message.data : null;
@@ -163,6 +166,7 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
 
             if (typeof tick.pip_size === 'number') setAnalysisPrecision(tick.pip_size);
             const nextTick = tick.quote;
+            setTickSequence(current => current + 1);
 
             if (!historyLoaded) {
                 pendingTicks = [...pendingTicks, nextTick].slice(-100);
@@ -609,7 +613,23 @@ const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChang
                     </p>
                 )}
             </section>
-
+            <section className='manual-trading-card manual-trading-analysis' aria-labelledby='manual-digit-analysis-title'>
+                <h2 id='manual-digit-analysis-title'>{localize('Live last digit analysis')}</h2>
+                <p className='manual-trading-analysis__sample'>
+                    {localize('Market')}: {selectedSymbol || localize('Waiting for a market')}
+                    {' · '}
+                    {localize('Sample')}: {analysisPrices.length}
+                </p>
+                {analysisLoading && <p>{localize('Loading live ticks…')}</p>}
+                {analysisError && <p className='manual-trading-feedback manual-trading-feedback--error' role='alert'>{analysisError}</p>}
+                {!analysisLoading && !analysisError && (
+                    <LiveDigitVisualizer
+                        prices={analysisPrices}
+                        pipSize={analysisPrecision}
+                        tickSequence={tickSequence}
+                    />
+                )}
+            </section>
         </aside>
     );
 });

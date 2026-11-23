@@ -24,6 +24,7 @@ const FreeBots = observer(() => {
     const [martingale, setMartingale] = useState(false);
     const [martingaleMultiplier, setMartingaleMultiplier] = useState('2');
     const [tickDuration, setTickDuration] = useState('1');
+    const [targetDigit, setTargetDigit] = useState('5');
     const [symbol, setSymbol] = useState('R_100');
 
     const loadBot = async (bot: (typeof FREE_BOT_TEMPLATES)[number]) => {
@@ -55,6 +56,7 @@ const FreeBots = observer(() => {
             martingaleMultiplier: Number(martingaleMultiplier),
             tickDuration: Number(tickDuration),
             symbol,
+            targetDigit: Number(targetDigit),
         });
 
         try {
@@ -94,6 +96,7 @@ const FreeBots = observer(() => {
             martingaleMultiplier: Number(martingaleMultiplier),
             tickDuration: Number(tickDuration),
             symbol,
+            targetDigit: Number(targetDigit),
         });
         const file = new Blob([xml], { type: 'application/xml' });
         const fileUrl = URL.createObjectURL(file);
@@ -177,6 +180,16 @@ const FreeBots = observer(() => {
                                 }
                             />
                         </label>
+                        {bot.contractType === 'DIGITDIFF' && (
+                            <label className='free-bots__count'>
+                                {localize('Entry digit and Differs target')}
+                                <select value={targetDigit} onChange={event => setTargetDigit(event.target.value)}>
+                                    {Array.from({ length: 10 }, (_, digit) => (
+                                        <option key={digit} value={digit}>{digit}</option>
+                                    ))}
+                                </select>
+                            </label>
+                        )}
                         <div className='free-bots__actions'>
                             <button
                                 type='button'

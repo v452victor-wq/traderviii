@@ -1,7 +1,9 @@
 .welcome-page {
     --welcome-black: #080808;
+    --welcome-red: #b42332;
     --welcome-gold: #f2c65d;
     --welcome-yellow: #fff0bd;
+    --welcome-blue: #092454;
 
     position: relative;
     display: flex;
@@ -10,7 +12,10 @@
     overflow: hidden;
     padding: 2.8rem 7.2%;
     color: #f8f6f0;
-    background: radial-gradient(ellipse at 74% 44%, rgb(242 198 93 / 7%), transparent 37%), var(--welcome-black);
+    background:
+        radial-gradient(ellipse at 76% 44%, rgb(9 36 84 / 42%), transparent 38%),
+        radial-gradient(ellipse at 0 0, rgb(180 35 50 / 28%), transparent 44%),
+        var(--welcome-black);
     font-family: var(--brand-font-primary), sans-serif;
 
     &::before {
@@ -52,7 +57,7 @@
         border: 1px solid rgb(242 198 93 / 65%);
         border-radius: 1.1rem;
         color: var(--welcome-yellow);
-        background: linear-gradient(145deg, rgb(242 198 93 / 25%), rgb(0 0 0 / 90%));
+        background: linear-gradient(145deg, rgb(180 35 50 / 62%), rgb(9 36 84 / 90%));
         font-size: 1.7rem;
     }
 
@@ -191,7 +196,7 @@
         padding: 2.2rem 2.4rem 1.7rem;
         border: 1px solid rgb(255 255 255 / 15%);
         border-radius: 1.6rem;
-        background: linear-gradient(145deg, #1a1a1a, #101010);
+        background: linear-gradient(145deg, #102750, #101010 74%);
         box-shadow:
             0 2.5rem 7rem rgb(0 0 0 / 32%),
             inset 0 1px rgb(255 255 255 / 5%);
