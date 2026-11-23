@@ -126,27 +126,27 @@
     }
 
     .live-digit-visualizer {
-        --ring-radius: min(10rem, 28vw);
-
-        aspect-ratio: 1;
         display: grid;
+        gap: 1.2rem;
         margin: 0 auto;
-        max-width: 30rem;
-        place-items: center;
+        max-width: 34rem;
+        padding: 0.8rem;
         position: relative;
         width: 100%;
 
         &::before {
             border: 1px solid color-mix(in srgb, var(--brand-primary) 35%, transparent);
-            border-radius: 50%;
+            border-radius: 1rem;
             content: '';
-            inset: 20%;
+            inset: 0;
+            pointer-events: none;
             position: absolute;
         }
 
         &__row {
-            inset: 0;
-            position: absolute;
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
         }
 
         &__item {
@@ -154,14 +154,6 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
-            left: 50%;
-            position: absolute;
-            top: 50%;
-            transform:
-                translate(-50%, -50%)
-                rotate(var(--digit-angle))
-                translateY(calc(0rem - var(--ring-radius)))
-                rotate(var(--digit-counter-angle));
         }
 
         &__circle {
@@ -173,9 +165,9 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            max-width: clamp(2.8rem, 14vw, 5.6rem);
+            max-width: 5.6rem;
             transition: border-color 180ms ease, transform 220ms ease, box-shadow 220ms ease;
-            width: clamp(2.8rem, 14vw, 5.6rem);
+            width: 100%;
 
             strong {
                 font-size: clamp(1.4rem, 2.2vw, 2rem);
@@ -218,15 +210,6 @@
             animation: live-digit-pointer 260ms ease-out;
         }
 
-        &__center {
-            color: var(--text-prominent);
-            font-size: 0.9rem;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            line-height: 1.6;
-            position: relative;
-            text-align: center;
-        }
     }
 
     &__parity {

@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
 import { getDigitDistribution, getLastDigit } from './digit-analysis';
 
@@ -20,48 +19,39 @@ const LiveDigitVisualizer = ({ prices, pipSize, tickSequence = 0 }: LiveDigitVis
 
     return (
         <div className='live-digit-visualizer' aria-label='Live last digit frequency'>
-            <div className='live-digit-visualizer__row'>
-                {distribution.map(({ digit, count }) => {
-                    const percentage = total ? (count / total) * 100 : 0;
-                    const isHigh = total > 0 && count === highest;
-                    const isLow = total > 0 && count === lowest && count < highest;
-                    const isActive = latestDigit === digit;
-                    return (
-                        <div
-                            className={[
-                                'live-digit-visualizer__item',
-                                isHigh ? 'live-digit-visualizer__item--high' : '',
-                                isLow ? 'live-digit-visualizer__item--low' : '',
-                                isActive ? 'live-digit-visualizer__item--active' : '',
-                            ].join(' ')}
-                            key={digit}
-                            style={
-                                {
-                                    '--digit-angle': `${digit * 36}deg`,
-                                    '--digit-counter-angle': `${digit * -36}deg`,
-                                } as CSSProperties
-                            }
-                        >
-                            <span className='live-digit-visualizer__circle'>
-                                <strong>{digit}</strong>
-                                <small>{percentage.toFixed(1)}%</small>
-                            </span>
-                            <span
-                                className='live-digit-visualizer__pointer'
-                                key={`${digit}-${tickSequence}`}
-                                aria-hidden='true'
+            {[distribution.slice(0, 5), distribution.slice(5, 10)].map((row, rowIndex) => (
+                <div className='live-digit-visualizer__row' key={rowIndex}>
+                    {row.map(({ digit, count }) => {
+                        const percentage = total ? (count / total) * 100 : 0;
+                        const isHigh = total > 0 && count === highest;
+                        const isLow = total > 0 && count === lowest && count < highest;
+                        const isActive = latestDigit === digit;
+                        return (
+                            <div
+                                className={[
+                                    'live-digit-visualizer__item',
+                                    isHigh ? 'live-digit-visualizer__item--high' : '',
+                                    isLow ? 'live-digit-visualizer__item--low' : '',
+                                    isActive ? 'live-digit-visualizer__item--active' : '',
+                                ].join(' ')}
+                                key={digit}
                             >
-                                ▲
-                            </span>
-                        </div>
-                    );
-                })}
-            </div>
-            <span className='live-digit-visualizer__center' aria-hidden='true'>
-                LIVE
-                <br />
-                DIGITS
-            </span>
+                                <span className='live-digit-visualizer__circle'>
+                                    <strong>{digit}</strong>
+                                    <small>{percentage.toFixed(1)}%</small>
+                                </span>
+                                <span
+                                    className='live-digit-visualizer__pointer'
+                                    key={`${digit}-${tickSequence}`}
+                                    aria-hidden='true'
+                                >
+                                    ▲
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
         </div>
     );
 };

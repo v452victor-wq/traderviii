@@ -209,7 +209,7 @@ const definitions: Array<Omit<MasterBotTemplate, 'xml'>> = [
     },
     {
         id: 'wakisasa-under',
-        name: 'Wakisasa Bot (Under)',
+        name: 'Wakisasa Bot',
         description: 'Waits for consecutive Over digits above 5, then enters an Under contract.',
         contractType: 'DIGITUNDER',
         defaultConsecutiveTicks: 5,

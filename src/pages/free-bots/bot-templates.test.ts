@@ -71,4 +71,36 @@ describe('free bot templates', () => {
         expect(xml).toContain('Entry streak');
         expect(xml).toContain('Current stake');
     });
+
+    it('keeps Wakisasa explicitly named and waits for configured Over digits before Under', () => {
+        const wakisasa = FREE_BOT_TEMPLATES.find(bot => bot.id === 'wakisasa-under');
+        expect(wakisasa?.name).toBe('Wakisasa Bot');
+        if (!wakisasa) throw new Error('Wakisasa template is missing.');
+
+        const { xml: _templateXml, ...bot } = wakisasa;
+        const xml = buildMasterBotXml(bot, {
+            consecutiveTicks: 5,
+            stake: 1,
+            stopLoss: 10,
+            takeProfit: 20,
+            martingale: false,
+            martingaleMultiplier: 2,
+            tickDuration: 2,
+            symbol: 'R_100',
+            targetDigit: 6,
+        });
+        const document = new DOMParser().parseFromString(xml, 'application/xml');
+        const entryCondition = document.querySelector(
+            'block[type="before_purchase"] block[type="controls_if"] > value[name="IF0"]'
+        );
+
+        expect(document.getElementsByTagName('parsererror')).toHaveLength(0);
+        expect(document.querySelector('field[name="TYPE_LIST"]')?.textContent).toBe('DIGITUNDER');
+        expect(document.querySelector('field[name="PURCHASE_LIST"]')?.textContent).toBe('DIGITUNDER');
+        expect(entryCondition?.querySelector('field[name="OP"]')?.textContent).toBe('GT');
+        expect(entryCondition?.querySelector('field[name="NUM"]')?.textContent).toBe('6');
+        expect(document.querySelector('field[name="DURATIONTYPE_LIST"]')?.textContent).toBe('t');
+        expect(document.querySelector('field[name="NUM"]')?.textContent).toBe('0');
+        expect(xml).toContain('NUM">5</field>');
+    });
 });

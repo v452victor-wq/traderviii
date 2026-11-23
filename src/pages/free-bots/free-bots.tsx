@@ -24,7 +24,9 @@ const FreeBots = observer(() => {
     const [martingale, setMartingale] = useState(false);
     const [martingaleMultiplier, setMartingaleMultiplier] = useState('2');
     const [tickDuration, setTickDuration] = useState('1');
-    const [targetDigit, setTargetDigit] = useState('5');
+    const [targetDigits, setTargetDigits] = useState<Record<string, string>>(
+        Object.fromEntries(FREE_BOT_TEMPLATES.map(bot => [bot.id, '5']))
+    );
     const [symbol, setSymbol] = useState('R_100');
 
     const loadBot = async (bot: (typeof FREE_BOT_TEMPLATES)[number]) => {
@@ -56,7 +58,7 @@ const FreeBots = observer(() => {
             martingaleMultiplier: Number(martingaleMultiplier),
             tickDuration: Number(tickDuration),
             symbol,
-            targetDigit: Number(targetDigit),
+            targetDigit: Number(targetDigits[bot.id]),
         });
 
         try {
@@ -96,7 +98,7 @@ const FreeBots = observer(() => {
             martingaleMultiplier: Number(martingaleMultiplier),
             tickDuration: Number(tickDuration),
             symbol,
-            targetDigit: Number(targetDigit),
+            targetDigit: Number(targetDigits[bot.id]),
         });
         const file = new Blob([xml], { type: 'application/xml' });
         const fileUrl = URL.createObjectURL(file);
@@ -180,13 +182,32 @@ const FreeBots = observer(() => {
                                 }
                             />
                         </label>
-                        {bot.contractType === 'DIGITDIFF' && (
+                        {(bot.contractType === 'DIGITDIFF' ||
+                            bot.contractType === 'DIGITUNDER' ||
+                            bot.contractType === 'DIGITOVER') && (
                             <label className='free-bots__count'>
-                                {localize('Entry digit and Differs target')}
-                                <select value={targetDigit} onChange={event => setTargetDigit(event.target.value)}>
-                                    {Array.from({ length: 10 }, (_, digit) => (
-                                        <option key={digit} value={digit}>{digit}</option>
-                                    ))}
+                                {bot.contractType === 'DIGITDIFF'
+                                    ? localize('Entry digit and Differs target')
+                                    : bot.contractType === 'DIGITUNDER'
+                                      ? localize('Over entry threshold')
+                                      : localize('Under entry threshold')}
+                                <select
+                                    value={targetDigits[bot.id] ?? '5'}
+                                    onChange={event =>
+                                        setTargetDigits(current => ({ ...current, [bot.id]: event.target.value }))
+                                    }
+                                >
+                                    {Array.from({ length: 10 }, (_, digit) => digit)
+                                        .filter(
+                                            digit =>
+                                                bot.contractType === 'DIGITDIFF' ||
+                                                (digit >= 1 && digit <= 8)
+                                        )
+                                        .map(digit => (
+                                            <option key={digit} value={digit}>
+                                                {digit}
+                                            </option>
+                                        ))}
                                 </select>
                             </label>
                         )}
