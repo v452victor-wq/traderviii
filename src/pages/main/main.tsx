@@ -42,9 +42,6 @@ import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
-import FreeBots from '../free-bots/free-bots';
-import AnalysisTool from '../chart/analysis-tool';
-import AiScannerButton from '../chart/ai-scanner-button';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -79,9 +76,9 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { DASHBOARD, BOT_BUILDER, FREE_BOTS } = DBOT_TABS;
+    const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'analysis_tool', 'free_bot', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -371,7 +368,7 @@ const AppWrapper = observer(() => {
     // [/AI]
     return (
         <React.Fragment>
-            <div className={classNames('main', { 'main--free-bots': active_tab === FREE_BOTS })}>
+            <div className='main'>
                 <div
                     className={classNames('main__container', {
                         'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop,
@@ -409,18 +406,6 @@ const AppWrapper = observer(() => {
                                 id='id-bot-builder'
                             />
                             <div
-                                label={<Localize i18n_default_text='Analysis Tool' />}
-                                id='id-analysis-tool'
-                            >
-                                <AnalysisTool />
-                            </div>
-                            <div
-                                label={<Localize i18n_default_text='Free Bot' />}
-                                id='id-free-bots'
-                            >
-                                <FreeBots />
-                            </div>
-                            <div
                                 label={
                                     <>
                                         <LabelPairedChartLineCaptionRegularIcon
@@ -440,7 +425,7 @@ const AppWrapper = observer(() => {
                                 <Suspense
                                     fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}
                                 >
-                                    <ChartWrapper show_digits_stats={false} show_manual_trading />
+                                    <ChartWrapper show_digits_stats={false} />
                                 </Suspense>
                             </div>
                             <div
@@ -472,7 +457,6 @@ const AppWrapper = observer(() => {
                     </div>
                 </div>
             </div>
-            <AiScannerButton />
             <DesktopWrapper>
                 <div className='main__run-strategy-wrapper'>
                     <RunStrategy />

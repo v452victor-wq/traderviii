@@ -140,37 +140,6 @@
     }
 }
 
-.dashboard__chart-trading-layout {
-    display: grid;
-    gap: 1.2rem;
-    grid-template-columns: minmax(0, 1fr) 32rem;
-    height: var(--tab-content-height);
-    min-width: 0;
-    width: 100%;
-
-    &--drawer-open {
-        width: calc(100vw - 39.8rem);
-    }
-
-    .dashboard__chart-wrapper {
-        height: 100%;
-        min-width: 0;
-        width: 100%;
-    }
-
-    @include mobile-or-tablet-screen {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(32rem, 55vh) minmax(0, 1fr);
-        height: var(--tab-content-height-mobile);
-        overflow-y: auto;
-
-        .manual-trading-panel {
-            overflow: visible;
-            padding: 0 1.2rem 1.2rem;
-        }
-    }
-}
-
 .cq-modal-dropdown.stxMenuActive {
     left: 0;
     top: 0;

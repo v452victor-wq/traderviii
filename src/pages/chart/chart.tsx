@@ -9,17 +9,10 @@ import { useSmartChartAdaptor } from '@/hooks/useSmartChartAdaptor';
 import { useStore } from '@/hooks/useStore';
 import { ChartTitle, SmartChart, TGranularity, TStateChangeListener } from '@deriv-com/smartcharts-champion';
 import { useDevice } from '@deriv-com/ui';
-import ManualTradingPanel from './manual-trading-panel';
 import ToolbarWidgets from './toolbar-widgets';
 import '@deriv-com/smartcharts-champion/dist/smartcharts.css';
-import './manual-trading-panel.scss';
 
-type ChartProps = {
-    show_digits_stats: boolean;
-    show_manual_trading?: boolean;
-};
-
-const Chart = observer(({ show_digits_stats, show_manual_trading = false }: ChartProps) => {
+const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) => {
     const barriers: [] = [];
     const { common, ui } = useStore();
     const { chart_store, run_panel, dashboard } = useStore();
@@ -94,60 +87,46 @@ const Chart = observer(({ show_digits_stats, show_manual_trading = false }: Char
 
     return (
         <div
-            className={classNames({
-                'dashboard__chart-trading-layout': show_manual_trading,
-                'dashboard__chart-trading-layout--drawer-open': show_manual_trading && is_drawer_open && isDesktop,
+            className={classNames('dashboard__chart-wrapper', {
+                'dashboard__chart-wrapper--expanded': is_drawer_open && isDesktop,
+                'dashboard__chart-wrapper--modal': is_chart_modal_visible && isDesktop,
+                'dashboard__chart-wrapper--safari': isSafari,
             })}
+            dir='ltr'
         >
-            <div
-                className={classNames('dashboard__chart-wrapper', {
-                    'dashboard__chart-wrapper--expanded': !show_manual_trading && is_drawer_open && isDesktop,
-                    'dashboard__chart-wrapper--modal': is_chart_modal_visible && isDesktop,
-                    'dashboard__chart-wrapper--safari': isSafari,
-                })}
-                dir='ltr'
-            >
-                <SmartChart
-                    id={`dbot-${symbol}`}
-                    key={`chart-${symbol}`}
-                    barriers={barriers}
-                    showLastDigitStats={show_digits_stats}
-                    chartControlsWidgets={null}
-                    enabledChartFooter={false}
-                    stateChangeListener={handleStateChange}
-                    toolbarWidget={() => (
-                        <ToolbarWidgets
-                            updateChartType={updateChartType}
-                            updateGranularity={updateGranularity}
-                            position={!isDesktop ? 'bottom' : 'top'}
-                            isDesktop={isDesktop}
-                        />
-                    )}
-                    chartType={chart_type}
-                    isMobile={isMobile}
-                    enabledNavigationWidget={isDesktop}
-                    granularity={granularity as TGranularity}
-                    getQuotes={getQuotes}
-                    subscribeQuotes={subscribeQuotes}
-                    unsubscribeQuotes={unsubscribeQuotes}
-                    chartData={{ activeSymbols: chartData.activeSymbols, tradingTimes: chartData.tradingTimes }}
-                    settings={settings}
-                    symbol={symbol}
-                    topWidgets={() => <ChartTitle onChange={onSymbolChange} />}
-                    isConnectionOpened={is_connection_opened}
-                    getMarketsOrder={getMarketsOrder}
-                    isLive
-                    leftMargin={80}
-                    drawingToolFloatingMenuPosition={isMobile ? { x: 100, y: 100 } : { x: 200, y: 200 }}
-                />
-            </div>
-            {show_manual_trading && (
-                <ManualTradingPanel
-                    activeSymbols={chartData.activeSymbols}
-                    chartSymbol={symbol}
-                    onSymbolChange={onSymbolChange}
-                />
-            )}
+            <SmartChart
+                id={`dbot-${symbol}`}
+                key={`chart-${symbol}`}
+                barriers={barriers}
+                showLastDigitStats={show_digits_stats}
+                chartControlsWidgets={null}
+                enabledChartFooter={false}
+                stateChangeListener={handleStateChange}
+                toolbarWidget={() => (
+                    <ToolbarWidgets
+                        updateChartType={updateChartType}
+                        updateGranularity={updateGranularity}
+                        position={!isDesktop ? 'bottom' : 'top'}
+                        isDesktop={isDesktop}
+                    />
+                )}
+                chartType={chart_type}
+                isMobile={isMobile}
+                enabledNavigationWidget={isDesktop}
+                granularity={granularity as TGranularity}
+                getQuotes={getQuotes}
+                subscribeQuotes={subscribeQuotes}
+                unsubscribeQuotes={unsubscribeQuotes}
+                chartData={{ activeSymbols: chartData.activeSymbols, tradingTimes: chartData.tradingTimes }}
+                settings={settings}
+                symbol={symbol}
+                topWidgets={() => <ChartTitle onChange={onSymbolChange} />}
+                isConnectionOpened={is_connection_opened}
+                getMarketsOrder={getMarketsOrder}
+                isLive
+                leftMargin={80}
+                drawingToolFloatingMenuPosition={isMobile ? { x: 100, y: 100 } : { x: 200, y: 200 }}
+            />
         </div>
     );
 });

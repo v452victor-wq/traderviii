@@ -37,7 +37,7 @@ type TApiBaseApi = {
         addEventListener: (event: string, callback: () => void) => void;
         removeEventListener: (event: string, callback: () => void) => void;
     };
-    send: (data: unknown) => Promise<unknown>;
+    send: (data: unknown) => void;
     disconnect: () => void;
     authorize: (token: string) => Promise<{ authorize: TAuthData; error: unknown }>;
 

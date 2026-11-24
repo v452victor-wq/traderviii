@@ -290,7 +290,7 @@ export default class LoadModalStore {
 
     loadStrategyToBuilder = async (strategy: TStrategy, is_show_notification: boolean = true) => {
         if (strategy?.id) {
-            const result = await load({
+            await load({
                 block_string: strategy.xml,
                 strategy_id: strategy.id,
                 file_name: strategy.name,
@@ -300,12 +300,8 @@ export default class LoadModalStore {
                 showIncompatibleStrategyDialog: false,
                 show_snackbar: is_show_notification,
             });
-            if (result?.error) return false;
-
             window.Blockly.derivWorkspace.strategy_to_load = strategy.xml;
-            return true;
         }
-        return false;
     };
 
     refreshStrategiesTheme = async () => {

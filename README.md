@@ -83,25 +83,6 @@ This produces a static build in the `dist/` directory (Rsbuild output — there 
 `.next`/`out`). Serve the contents of `dist/` from any web server or static host.
 SmartCharts engine assets are copied into `dist/js/smartcharts/` during the build.
 
-## Manual digit trading and analysis
-
-The **Charts** tab includes a manual trading panel for synthetic indices. It supports
-Over/Under, Odd/Even, and Matches/Differs contracts with tick durations from 1 to 10.
-The panel requests and displays a quote before offering a separate **Confirm and buy**
-action; real-account orders also require an explicit browser confirmation.
-
-Digit analysis shows the frequency and parity of the last 100 live ticks for the
-selected synthetic index. These historical counts are descriptive only and do not
-predict future results. Log in with a Deriv account that has trading access to place
-contracts.
-
-## Netlify deployment
-
-`netlify.toml` configures Netlify to run `npm run build` and publish `dist/`. Push to
-the branch connected to your Netlify site to trigger its configured deploy.
-
-The root route (`/`) is the ViiTrader welcome page; the trading app is available at `/trade`.
-
 ## Google Drive integration (optional)
 
 Saving/loading strategies to Google Drive stays disabled unless `GD_CLIENT_ID`,
