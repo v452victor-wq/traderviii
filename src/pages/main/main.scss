@@ -28,15 +28,18 @@
 }
 
 .main {
+    box-sizing: border-box;
     display: flex;
     overflow: hidden;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     height: calc(100vh - 9rem);
     padding: 1.6rem;
 
     &--free-bots {
         -webkit-overflow-scrolling: touch;
-        overflow-x: hidden;
+        overflow-x: clip;
         overflow-y: auto;
         touch-action: pan-y;
     }
@@ -54,6 +57,7 @@
         position: relative;
         border: none;
         max-width: 100%;
+        min-width: 0;
         width: 100%;
 
         &.no-scroll {
@@ -239,11 +243,14 @@
 .main--free-bots {
     .dc-tabs--main__tabs {
         grid-template-rows: auto auto;
+        max-width: 100%;
+        min-width: 0;
     }
 
     .dc-tabs__content--main__tabs {
         overflow: visible;
         touch-action: pan-y;
+        min-width: 0;
     }
 }
 

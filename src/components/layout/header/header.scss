@@ -2,6 +2,64 @@
 @use 'components/shared/styles/mixins' as *;
 
 .app-header {
+    box-sizing: border-box;
+    max-width: 100%;
+
+    &__contact {
+        margin-inline-end: 0.8rem;
+        position: relative;
+
+        summary {
+            align-items: center;
+            background: #d93025;
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            font-size: 1.8rem;
+            height: 3.8rem;
+            justify-content: center;
+            list-style: none;
+            width: 3.8rem;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            &:focus-visible {
+                outline: 2px solid currentColor;
+                outline-offset: 2px;
+            }
+        }
+
+        &-menu {
+            background: var(--general-main-1);
+            border: 1px solid var(--border-normal);
+            border-radius: 0.8rem;
+            box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 18%);
+            display: grid;
+            inset-inline-end: 0;
+            min-width: 13rem;
+            padding: 0.4rem;
+            position: absolute;
+            top: calc(100% + 0.6rem);
+            z-index: 20;
+
+            a {
+                border-radius: 0.4rem;
+                color: var(--text-prominent);
+                font-size: 1.4rem;
+                padding: 1rem 1.2rem;
+                text-decoration: none;
+
+                &:hover,
+                &:focus-visible {
+                    background: var(--general-section-1);
+                }
+            }
+        }
+    }
+
     &__account-settings {
         padding-inline-end: 1.2rem;
         border-inline-end: 0.1rem solid var(--general-section-1);
