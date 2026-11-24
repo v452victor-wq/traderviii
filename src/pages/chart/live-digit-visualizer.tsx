@@ -4,10 +4,18 @@ import { getDigitDistribution, getLastDigit } from './digit-analysis';
 type LiveDigitVisualizerProps = {
     prices: Array<number | string>;
     pipSize: number;
+    digitCounts?: number[];
+    tickSequence?: number;
 };
 
-const LiveDigitVisualizer = ({ prices, pipSize }: LiveDigitVisualizerProps) => {
-    const distribution = useMemo(() => getDigitDistribution(prices, pipSize), [prices, pipSize]);
+const LiveDigitVisualizer = ({ prices, pipSize, digitCounts, tickSequence }: LiveDigitVisualizerProps) => {
+    const distribution = useMemo(
+        () =>
+            digitCounts
+                ? Array.from({ length: 10 }, (_, digit) => ({ digit, count: digitCounts[digit] ?? 0 }))
+                : getDigitDistribution(prices, pipSize),
+        [digitCounts, prices, pipSize]
+    );
     const total = distribution.reduce((sum, { count }) => sum + count, 0);
     const highest = total ? Math.max(...distribution.map(({ count }) => count)) : 0;
     const lowest = total ? Math.min(...distribution.map(({ count }) => count)) : 0;
@@ -40,7 +48,15 @@ const LiveDigitVisualizer = ({ prices, pipSize }: LiveDigitVisualizerProps) => {
                                     <small>{percentage.toFixed(1)}%</small>
                                 </span>
                                 <span
-                                    className='live-digit-visualizer__pointer'
+                                    className={[
+                                        'live-digit-visualizer__pointer',
+                                        isActive && tickSequence !== undefined && tickSequence % 2 === 0
+                                            ? 'live-digit-visualizer__pointer--pulse-even'
+                                            : '',
+                                        isActive && tickSequence !== undefined && tickSequence % 2 !== 0
+                                            ? 'live-digit-visualizer__pointer--pulse-odd'
+                                            : '',
+                                    ].join(' ')}
                                     aria-hidden='true'
                                 >
                                     ▲
