@@ -34,6 +34,13 @@
     height: calc(100vh - 9rem);
     padding: 1.6rem;
 
+    &--free-bots {
+        -webkit-overflow-scrolling: touch;
+        overflow-x: hidden;
+        overflow-y: auto;
+        touch-action: pan-y;
+    }
+
     .tabs-shadow {
         display: none;
     }
@@ -226,6 +233,17 @@
         &--hidden {
             display: none;
         }
+    }
+}
+
+.main--free-bots {
+    .dc-tabs--main__tabs {
+        grid-template-rows: auto auto;
+    }
+
+    .dc-tabs__content--main__tabs {
+        overflow: visible;
+        touch-action: pan-y;
     }
 }
 
