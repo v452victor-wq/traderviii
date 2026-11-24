@@ -12,6 +12,7 @@ import { LegacyRadioOffIcon, LegacyRadioOnIcon } from '@deriv/quill-icons';
 import { Localize, localize } from '@deriv-com/translations';
 import { MarketIcon } from '../market/market-icon';
 import { convertDateFormat } from '../shared';
+import { isContractWon } from '../shared/utils/contract';
 import Popover from '../shared_ui/popover';
 import { TradeTypeIcon } from '../trade-type/trade-type-icon';
 
@@ -229,8 +230,8 @@ const Transaction = ({ contract, active_transaction_id, onClickTransaction }: TT
                     {contract?.is_completed ? (
                         <div
                             className={classNames({
-                                'transactions__profit--win': contract?.profit && contract?.profit >= 0,
-                                'transactions__profit--loss': contract?.profit && contract?.profit < 0,
+                                'transactions__profit--win': !!contract && isContractWon(contract),
+                                'transactions__profit--loss': !contract || !isContractWon(contract),
                             })}
                         >
                             <Money amount={Math.abs(contract.profit || 0)} currency={contract.currency} show_currency />

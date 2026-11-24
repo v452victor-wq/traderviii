@@ -8,21 +8,19 @@ import {
 import { Localize } from '@deriv-com/translations';
 
 type TContractResultOverlayProps = {
-    profit: number;
+    is_won: boolean;
 };
 
-const ContractResultOverlay = ({ profit }: TContractResultOverlayProps) => {
-    const has_won_contract = profit >= 0;
-
+const ContractResultOverlay = ({ is_won }: TContractResultOverlayProps) => {
     return (
         <div
             className={classNames('db-contract-card__result', {
-                'db-contract-card__result--won': has_won_contract,
-                'db-contract-card__result--lost': !has_won_contract,
+                'db-contract-card__result--won': is_won,
+                'db-contract-card__result--lost': !is_won,
             })}
         >
             <Text weight='bold' className='db-contract-card__result-caption'>
-                {has_won_contract ? (
+                {is_won ? (
                     <React.Fragment>
                         <Localize i18n_default_text='Won' />
                         <LabelPairedCircleCheckMdRegularIcon className='db-contract-card__result-icon' color='green' />

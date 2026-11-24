@@ -1,6 +1,6 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
-import { formatDate, isEnded } from '@/components/shared';
+import { formatDate, getContractPayout, getContractProfit, isContractWon, isEnded } from '@/components/shared';
 import { LogTypes } from '@/external/bot-skeleton';
 import { ProposalOpenContract } from '@deriv/api-types';
 import { TPortfolioPosition, TStores } from '@deriv/stores/types';
@@ -70,16 +70,15 @@ export default class TransactionsStore {
         const statistics = trxs.reduce(
             (stats, { data }) => {
                 const contract = data as TContractInfo;
-                const profit = Number(contract.profit) || 0;
+                const profit = getContractProfit(contract);
                 const is_completed = contract.is_completed || false;
                 const buy_price = Number(contract.buy_price) || 0;
-                const payout = Number(contract.payout) || Number(contract.bid_price) || 0;
-                const bid_price = Number(contract.bid_price) || 0;
+                const payout = getContractPayout(contract);
 
                 if (is_completed) {
-                    if (profit > 0) {
+                    if (isContractWon(contract)) {
                         stats.won_contracts += 1;
-                        stats.total_payout += payout ?? bid_price ?? 0;
+                        stats.total_payout += payout;
                     } else {
                         stats.lost_contracts += 1;
                     }
@@ -165,20 +164,24 @@ export default class TransactionsStore {
                 type: transaction_elements.CONTRACT,
                 data: contract,
             });
+            this.persistTransactions(current_account);
         } else {
             // If data belongs to existing contract in memory, update it.
             this.elements[current_account]?.splice(same_contract_index, 1, {
                 type: transaction_elements.CONTRACT,
                 data: contract,
             });
+            if (is_completed) this.persistTransactions(current_account);
         }
 
         this.elements = { ...this.elements }; // force update
     }
 
     clear() {
-        if (this.elements && this.elements[this.core?.client?.loginid as string]?.length > 0) {
-            this.elements[this.core?.client?.loginid as string] = [];
+        const account_id = this.core?.client?.loginid as string;
+        if (this.elements && this.elements[account_id]?.length > 0) {
+            this.elements[account_id] = [];
+            this.persistTransactions(account_id);
         }
         this.recovered_completed_transactions = this.recovered_completed_transactions?.slice(0, 0);
         this.recovered_transactions = this.recovered_transactions?.slice(0, 0);
@@ -186,18 +189,6 @@ export default class TransactionsStore {
     }
 
     registerReactions() {
-        const { client } = this.core;
-
-        // Write transactions to session storage on each change in transaction elements.
-        const disposeTransactionElementsListener = reaction(
-            () => this.elements[client?.loginid as string],
-            elements => {
-                const stored_transactions = getStoredItemsByKey(this.TRANSACTION_CACHE, {});
-                stored_transactions[client.loginid as string] = elements?.slice(0, 5000) ?? [];
-                setStoredItemsByKey(this.TRANSACTION_CACHE, stored_transactions);
-            }
-        );
-
         // User could've left the page mid-contract. On initial load, try
         // to recover any pending contracts so we can reflect accurate stats
         // and transactions.
@@ -207,9 +198,14 @@ export default class TransactionsStore {
         );
 
         return () => {
-            disposeTransactionElementsListener();
             disposeRecoverContracts();
         };
+    }
+
+    persistTransactions(account_id: string) {
+        const stored_transactions = getStoredItemsByKey(this.TRANSACTION_CACHE, {});
+        stored_transactions[account_id] = this.elements[account_id]?.slice(0, 5000) ?? [];
+        setStoredItemsByKey(this.TRANSACTION_CACHE, stored_transactions);
     }
 
     recoverPendingContracts(contract = null) {

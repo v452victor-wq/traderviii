@@ -2,6 +2,7 @@ import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import ContractResultOverlay from '@/components/contract-result-overlay';
+import { isContractWon } from '@/components/shared/utils/contract';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { contract_stages } from '@/constants/contract-stage';
 import { useStore } from '@/hooks/useStore';
@@ -27,7 +28,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { has_active_bot, has_saved_bots } = blockly_store;
     const { isMobile } = useDevice();
 
-    const { is_contract_completed, profit } = summary_card;
+    const { is_contract_completed, contract_info } = summary_card;
     const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, onStopBotClick } =
         run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
@@ -223,7 +224,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     'animation--disabled': is_disabled,
                 })}
             >
-                {show_overlay && <ContractResultOverlay profit={profit} />}
+                {show_overlay && <ContractResultOverlay is_won={!!contract_info && isContractWon(contract_info)} />}
                 <span className='animation__text'>
                     <ContractStageText contract_stage={contract_stage} />
                 </span>

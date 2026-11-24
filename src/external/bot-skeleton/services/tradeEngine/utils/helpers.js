@@ -1,4 +1,11 @@
-import { findValueByKeyRecursively, formatTime, getRoundedNumber, isEmptyObject } from '@/components/shared';
+import {
+    findValueByKeyRecursively,
+    formatTime,
+    getContractPayout,
+    getContractProfit,
+    getRoundedNumber,
+    isEmptyObject,
+} from '@/components/shared';
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { config } from '@/external/bot-skeleton/constants';
 import { localize } from '@deriv-com/translations';
@@ -299,14 +306,16 @@ export const doUntilDone = (promiseFn, errors_to_ignore, api_base) => {
 };
 
 export const createDetails = contract => {
-    const { sell_price: sellPrice, buy_price: buyPrice, currency } = contract;
-    const profit = getRoundedNumber(sellPrice - buyPrice, currency);
-    const result = profit < 0 ? 'loss' : 'win';
+    const { buy_price: buyPrice, currency } = contract;
+    const buyPriceNumber = Number(buyPrice);
+    const sellPrice = getContractPayout(contract);
+    const profit = getRoundedNumber(getContractProfit(contract), currency);
+    const result = profit > 0 && sellPrice > 0 ? 'win' : 'loss';
 
     return [
         contract.transaction_ids.buy,
-        +contract.buy_price,
-        +contract.sell_price,
+        buyPriceNumber,
+        sellPrice,
         profit,
         contract.contract_type,
         formatTime(parseInt(`${contract.entry_tick_time}000`), 'HH:mm:ss'),

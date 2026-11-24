@@ -3,7 +3,24 @@ import getCandleInterface from './CandleInterface';
 import getIndicatorsInterface from './IndicatorsInterface';
 import getMiscInterface from './MiscInterface';
 
+const highlightExecutedBlock = function () {
+    const highlight_block_class = 'block--execution-highlighted';
+    if (!window.Blockly.utils.dom.hasClass(this.svgGroup_, highlight_block_class)) {
+        window.Blockly.utils.dom.addClass(this.svgGroup_, highlight_block_class);
+        setTimeout(() => {
+            if (this.svgGroup_) {
+                window.Blockly.utils.dom.removeClass(this.svgGroup_, highlight_block_class);
+            }
+        }, 1505);
+    }
+};
+
 const getToolsInterface = tradeEngine => {
+    const block_svg_prototype = window.Blockly.BlockSvg.prototype;
+    if (!block_svg_prototype.highlightExecutedBlock) {
+        block_svg_prototype.highlightExecutedBlock = highlightExecutedBlock;
+    }
+
     return {
         dateTimeStringToTimestamp: datetime_string => {
             const invalid_msg = localize('Invalid date/time: {{ datetime_string }}', { datetime_string });
@@ -50,17 +67,6 @@ const getToolsInterface = tradeEngine => {
         // Highlight the block that is being executed
         highlightBlock: block_id => {
             const block = window.Blockly.derivWorkspace.getBlockById(block_id);
-            window.Blockly.BlockSvg.prototype.highlightExecutedBlock = function () {
-                const highlight_block_class = 'block--execution-highlighted';
-                if (!window.Blockly.utils.dom.hasClass(this.svgGroup_, highlight_block_class)) {
-                    window.Blockly.utils.dom.addClass(this.svgGroup_, highlight_block_class);
-                    setTimeout(() => {
-                        if (this.svgGroup_) {
-                            window.Blockly.utils.dom.removeClass(this.svgGroup_, highlight_block_class);
-                        }
-                    }, 1505);
-                }
-            };
             if (block) {
                 block.highlightExecutedBlock(block);
             }

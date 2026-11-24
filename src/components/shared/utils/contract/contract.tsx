@@ -101,8 +101,31 @@ export const TRADE_TYPES = {
     },
 } as const;
 
-export const getContractStatus = ({ contract_type, exit_tick_time, profit, status }: TContractInfo) => {
-    const closed_contract_status = profit && profit < 0 && exit_tick_time ? 'lost' : 'won';
+export const getContractPayout = (contract_info: TContractInfo) => {
+    const payout = Number(contract_info.sell_price ?? contract_info.payout);
+    return Number.isFinite(payout) && payout > 0 ? payout : 0;
+};
+
+export const getContractProfit = (contract_info: TContractInfo) => {
+    const payout = getContractPayout(contract_info);
+    const buy_price = Number(contract_info.buy_price);
+    const reported_profit = contract_info.profit;
+    if (payout === 0 && Number.isFinite(buy_price) && buy_price > 0) return -buy_price;
+    if (reported_profit !== undefined && reported_profit !== null && Number.isFinite(Number(reported_profit))) {
+        return Number(reported_profit);
+    }
+    return payout - buy_price;
+};
+
+export const isContractWon = (contract_info: TContractInfo) => {
+    const payout = getContractPayout(contract_info);
+    const profit = getContractProfit(contract_info);
+    return Number.isFinite(profit) && profit > 0 && payout > 0;
+};
+
+export const getContractStatus = (contract_info: TContractInfo) => {
+    const { contract_type, exit_tick_time, status } = contract_info;
+    const closed_contract_status = isContractWon(contract_info) ? 'won' : 'lost';
     return isAccumulatorContract(contract_type)
         ? (status === 'open' && !exit_tick_time && 'open') || closed_contract_status
         : status;
@@ -281,7 +304,7 @@ export const getGrowthRatePercentage = (growth_rate: number) => growth_rate * 10
 export const getDisplayStatus = (contract_info: TContractInfo) => {
     let status = 'purchased';
     if (isEnded(contract_info)) {
-        status = getTotalProfit(contract_info) >= 0 ? 'won' : 'lost';
+        status = isContractWon(contract_info) ? 'won' : 'lost';
     }
     return status;
 };

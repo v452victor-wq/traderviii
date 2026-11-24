@@ -1,6 +1,6 @@
 import React from 'react';
 import ContractCardLoader from '@/components/contract-card-loading';
-import { getTotalProfit, TContractInfo } from '@/components/shared/utils/contract';
+import { getTotalProfit, isContractWon, TContractInfo } from '@/components/shared/utils/contract';
 import DesktopWrapper from '../desktop-wrapper';
 import { TGetCardLables, TGetContractPath } from '../types';
 import ContractCardBody from './contract-card-items/contract-card-body';
@@ -35,7 +35,7 @@ const ContractCard = ({
     result,
     should_show_result_overlay,
 }: React.PropsWithChildren<TContractCardProps>) => {
-    const fallback_result = profit_loss >= 0 ? 'won' : 'lost';
+    const fallback_result = isContractWon(contract_info) ? 'won' : 'lost';
     const payout_info = is_multiplier ? getTotalProfit(contract_info) : profit_loss;
     return (
         <React.Fragment>
