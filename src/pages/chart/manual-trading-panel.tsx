@@ -1,0 +1,633 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import { api_base } from '@/external/bot-skeleton';
+import chart_api from '@/external/bot-skeleton/services/api/chart-api';
+import { useStore } from '@/hooks/useStore';
+import { localize } from '@deriv-com/translations';
+import {
+    buildDigitProposalRequest,
+    DIGIT_CONTRACT_TYPES,
+} from './digit-analysis';
+import type { DigitContractType } from './digit-analysis';
+import LiveDigitVisualizer from './live-digit-visualizer';
+
+type TManualSymbol = {
+    display_name?: string;
+    exchange_is_open?: number | boolean;
+    is_trading_suspended?: number | boolean;
+    market?: string;
+    underlying_symbol?: string;
+    underlying_symbol_name?: string;
+    symbol?: string;
+    pip_size?: number;
+};
+
+type TProposal = {
+    ask_price: number;
+    id: string;
+    longcode: string;
+    payout: number;
+    stake: number;
+    currency: string;
+    loginid: string;
+    symbol: string;
+    contractType: DigitContractType;
+    barrier: number;
+    duration: number;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+type ManualTradingPanelProps = {
+    activeSymbols: TManualSymbol[];
+    chartSymbol?: string;
+    onSymbolChange: (symbol: string) => void;
+};
+
+const CONTRACT_LABELS: Record<DigitContractType, string> = {
+    DIGITOVER: localize('Over'),
+    DIGITUNDER: localize('Under'),
+    DIGITEVEN: localize('Even'),
+    DIGITODD: localize('Odd'),
+    DIGITMATCH: localize('Matches'),
+    DIGITDIFF: localize('Differs'),
+};
+
+const ManualTradingPanel = observer(({ activeSymbols, chartSymbol, onSymbolChange }: ManualTradingPanelProps) => {
+    const { client } = useStore();
+    const [selectedSymbol, setSelectedSymbol] = useState(chartSymbol ?? '');
+    const [contractType, setContractType] = useState<DigitContractType>('DIGITOVER');
+    const [barrier, setBarrier] = useState('5');
+    const [stake, setStake] = useState('1');
+    const [duration, setDuration] = useState('1');
+    const [stopLoss, setStopLoss] = useState('');
+    const [takeProfit, setTakeProfit] = useState('');
+    const [martingaleEnabled, setMartingaleEnabled] = useState(false);
+    const [martingaleMultiplier, setMartingaleMultiplier] = useState('2');
+    const [proposal, setProposal] = useState<TProposal | null>(null);
+    const [analysisPrices, setAnalysisPrices] = useState<Array<number | string>>([]);
+    const [analysisPrecision, setAnalysisPrecision] = useState(2);
+    const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
+    const [isQuoting, setIsQuoting] = useState(false);
+    const [isBuying, setIsBuying] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const quoteRequestId = useRef(0);
+    const buyInFlight = useRef(false);
+
+    const invalidateQuote = useCallback(() => {
+        quoteRequestId.current += 1;
+        setProposal(null);
+        setIsQuoting(false);
+    }, []);
+
+    const syntheticSymbols = useMemo(
+        () =>
+            activeSymbols
+                .filter(
+                    item =>
+                        item.market === 'synthetic_index' &&
+                        item.exchange_is_open !== false &&
+                        item.exchange_is_open !== 0 &&
+                        item.is_trading_suspended !== true &&
+                        item.is_trading_suspended !== 1
+                )
+                .map(item => ({
+                    symbol: item.underlying_symbol || item.symbol || '',
+                    name: item.underlying_symbol_name || item.display_name || item.underlying_symbol || item.symbol || '',
+                    pipSize: item.pip_size,
+                }))
+                .filter(item => item.symbol),
+        [activeSymbols]
+    );
+
+    useEffect(() => {
+        if (syntheticSymbols.length === 0) return;
+
+        const chartMarket = syntheticSymbols.find(item => item.symbol === chartSymbol);
+        const nextSymbol = chartMarket?.symbol || syntheticSymbols.find(item => item.symbol === selectedSymbol)?.symbol;
+        const symbolToUse = nextSymbol || syntheticSymbols[0].symbol;
+
+        if (symbolToUse !== selectedSymbol) {
+            setSelectedSymbol(symbolToUse);
+            invalidateQuote();
+            if (!chartMarket) onSymbolChange(symbolToUse);
+        }
+    }, [chartSymbol, invalidateQuote, onSymbolChange, selectedSymbol, syntheticSymbols]);
+
+    useEffect(() => {
+        invalidateQuote();
+        setMessage('');
+        setError('');
+    }, [client.currency, client.loginid, invalidateQuote]);
+
+    useEffect(() => {
+        const api = chart_api.api;
+        if (!api || !selectedSymbol) {
+            setAnalysisPrices([]);
+            setAnalysisError(localize('Waiting for the market data connection.'));
+            return;
+        }
+
+        let isCancelled = false;
+        let subscriptionId: string | undefined;
+        let historyLoaded = false;
+        let pendingTicks: Array<number | string> = [];
+        const symbolPrecision =
+            syntheticSymbols.find(item => item.symbol === selectedSymbol)?.pipSize ??
+            api_base.pip_sizes[selectedSymbol] ??
+            2;
+        const forgetSubscription = () => {
+            if (!subscriptionId) return;
+            api.send({ forget: subscriptionId }).catch((unsubscribeError: unknown) => {
+                console.error('Failed to unsubscribe from manual trading tick analysis:', unsubscribeError);
+            });
+            subscriptionId = undefined;
+        };
+
+        setAnalysisLoading(true);
+        setAnalysisError('');
+        setAnalysisPrices([]);
+
+        const messageSubscription = api.onMessage().subscribe((message: unknown) => {
+            const data = isRecord(message) && isRecord(message.data) ? message.data : null;
+            const tick = isRecord(data?.tick) ? data.tick : null;
+            if (
+                data?.msg_type !== 'tick' ||
+                tick?.symbol !== selectedSymbol ||
+                (typeof tick?.quote !== 'number' && typeof tick?.quote !== 'string')
+            ) {
+                return;
+            }
+
+            if (typeof tick.pip_size === 'number') setAnalysisPrecision(tick.pip_size);
+            const nextTick = tick.quote;
+
+            if (!historyLoaded) {
+                pendingTicks = [...pendingTicks, nextTick].slice(-100);
+            } else {
+                setAnalysisPrices(current => [...current, nextTick].slice(-100));
+            }
+        });
+
+        api.send({
+            ticks_history: selectedSymbol,
+            count: 100,
+            end: 'latest',
+            style: 'ticks',
+            subscribe: 1,
+        })
+            .then((response: unknown) => {
+                const responseData = isRecord(response) ? response : null;
+                const responseError = isRecord(responseData?.error) ? responseData.error : null;
+                if (responseError) {
+                    throw new Error(
+                        typeof responseError.message === 'string'
+                            ? responseError.message
+                            : localize('Could not load tick history.')
+                    );
+                }
+
+                const subscription = isRecord(responseData?.subscription) ? responseData.subscription : null;
+                subscriptionId = typeof subscription?.id === 'string' ? subscription.id : undefined;
+                if (isCancelled) {
+                    forgetSubscription();
+                    return;
+                }
+
+                const historyData = isRecord(responseData?.history) ? responseData.history : null;
+                const history = historyData?.prices;
+                if (!Array.isArray(history)) {
+                    forgetSubscription();
+                    throw new Error(localize('No tick history was returned for this market.'));
+                }
+
+                const validHistory = history.filter(
+                    (price): price is number | string => typeof price === 'number' || typeof price === 'string'
+                );
+                setAnalysisPrecision(
+                    typeof responseData?.pip_size === 'number' ? responseData.pip_size : Number(symbolPrecision)
+                );
+                setAnalysisPrices([...validHistory, ...pendingTicks].slice(-100));
+                historyLoaded = true;
+                pendingTicks = [];
+            })
+            .catch((requestError: unknown) => {
+                if (!isCancelled) {
+                    setAnalysisError(
+                        requestError instanceof Error
+                            ? requestError.message
+                            : localize('Could not load tick history for this market.')
+                    );
+                }
+            })
+            .finally(() => {
+                if (!isCancelled) setAnalysisLoading(false);
+            });
+
+        return () => {
+            isCancelled = true;
+            messageSubscription.unsubscribe();
+            forgetSubscription();
+        };
+    }, [selectedSymbol, syntheticSymbols]);
+
+    const updateForm = (update: () => void) => {
+        update();
+        invalidateQuote();
+        setMessage('');
+        setError('');
+    };
+
+    const handleSymbolChange = (nextSymbol: string) => {
+        setSelectedSymbol(nextSymbol);
+        onSymbolChange(nextSymbol);
+        invalidateQuote();
+        setMessage('');
+        setError('');
+    };
+
+    const handleGetQuote = async () => {
+        const amount = Number(stake);
+        const durationInTicks = Number(duration);
+        const prediction = Number(barrier);
+
+        if (!client.is_logged_in || !api_base.is_authorized || !api_base.api) {
+            setError(localize('Log in to your Deriv account to request a trade quote.'));
+            return;
+        }
+        if (!selectedSymbol || !Number.isFinite(amount) || amount <= 0) {
+            setError(localize('Enter a valid stake and select a synthetic index.'));
+            return;
+        }
+        if (!Number.isInteger(durationInTicks) || durationInTicks < 1 || durationInTicks > 10) {
+            setError(localize('Duration must be between 1 and 10 ticks.'));
+            return;
+        }
+        if (contractType !== 'DIGITEVEN' && contractType !== 'DIGITODD') {
+            const minimumBarrier = contractType === 'DIGITUNDER' ? 1 : 0;
+            const maximumBarrier = contractType === 'DIGITOVER' ? 8 : 9;
+            if (!Number.isInteger(prediction) || prediction < minimumBarrier || prediction > maximumBarrier) {
+                setError(localize('Enter a valid prediction digit for this contract.'));
+                return;
+            }
+        }
+
+        invalidateQuote();
+        const requestId = quoteRequestId.current;
+        setIsQuoting(true);
+        setMessage('');
+        setError('');
+        const quoteLoginId = client.loginid;
+        const quoteCurrency = client.currency;
+        const quoteSymbol = selectedSymbol;
+        const quoteContractType = contractType;
+        const quoteBarrier = prediction;
+        const quoteDuration = durationInTicks;
+
+        try {
+            const response = await api_base.api.send(
+                buildDigitProposalRequest({
+                    amount,
+                    barrier: quoteBarrier,
+                    contractType: quoteContractType,
+                    currency: quoteCurrency,
+                    duration: quoteDuration,
+                    symbol: quoteSymbol,
+                })
+            );
+            if (requestId !== quoteRequestId.current) return;
+            const responseData = isRecord(response) ? response : null;
+            const responseError = isRecord(responseData?.error) ? responseData.error : null;
+            if (responseError) {
+                throw new Error(
+                    typeof responseError.message === 'string'
+                        ? responseError.message
+                        : localize('Could not get a trade quote.')
+                );
+            }
+
+            const proposalData = isRecord(responseData?.proposal) ? responseData.proposal : null;
+            if (
+                !proposalData ||
+                typeof proposalData.id !== 'string' ||
+                !Number.isFinite(Number(proposalData.ask_price)) ||
+                Number(proposalData.ask_price) <= 0 ||
+                !Number.isFinite(Number(proposalData.payout))
+            ) {
+                throw new Error(localize('The API did not return a valid trade quote.'));
+            }
+            if (client.loginid !== quoteLoginId || client.currency !== quoteCurrency) {
+                throw new Error(localize('Your selected account changed. Please request a new quote.'));
+            }
+
+            setProposal({
+                ask_price: Number(proposalData.ask_price),
+                id: proposalData.id,
+                longcode: typeof proposalData.longcode === 'string' ? proposalData.longcode : '',
+                payout: Number(proposalData.payout),
+                stake: amount,
+                currency: quoteCurrency,
+                loginid: quoteLoginId,
+                symbol: quoteSymbol,
+                contractType: quoteContractType,
+                barrier: quoteBarrier,
+                duration: quoteDuration,
+            });
+        } catch (requestError) {
+            if (requestId === quoteRequestId.current) {
+                setError(
+                    requestError instanceof Error ? requestError.message : localize('Could not get a trade quote.')
+                );
+            }
+        } finally {
+            if (requestId === quoteRequestId.current) setIsQuoting(false);
+        }
+    };
+
+    const handleBuy = async () => {
+        if (!proposal || !client.is_logged_in || !api_base.is_authorized || !api_base.api) {
+            setError(localize('Your account is not ready to place this trade. Please request a new quote.'));
+            return;
+        }
+        if (proposal.loginid !== client.loginid || proposal.currency !== client.currency) {
+            setProposal(null);
+            setError(localize('Your selected account changed. Please request a new quote.'));
+            return;
+        }
+
+        if (!client.is_virtual) {
+            const contractLabel = `${CONTRACT_LABELS[proposal.contractType]}${
+                proposal.contractType === 'DIGITEVEN' || proposal.contractType === 'DIGITODD'
+                    ? ''
+                    : ` ${proposal.barrier}`
+            }`;
+            const isConfirmed = window.confirm(
+                localize(
+                    'Confirm REAL-MONEY trade: {{price}} {{currency}} on {{symbol}} — {{contract}} for {{duration}} tick(s).',
+                    {
+                        price: proposal.ask_price,
+                        currency: proposal.currency,
+                        symbol: proposal.symbol,
+                        contract: contractLabel,
+                        duration: proposal.duration,
+                    }
+                )
+            );
+            if (!isConfirmed) return;
+        }
+
+        if (buyInFlight.current) return;
+        buyInFlight.current = true;
+        setIsBuying(true);
+        setMessage('');
+        setError('');
+
+        try {
+            const response = await api_base.api.send({ buy: proposal.id, price: proposal.ask_price });
+            const responseData = isRecord(response) ? response : null;
+            const responseError = isRecord(responseData?.error) ? responseData.error : null;
+            if (responseError) {
+                throw new Error(
+                    typeof responseError.message === 'string'
+                        ? responseError.message
+                        : localize('Could not place the trade.')
+                );
+            }
+
+            const buyData = isRecord(responseData?.buy) ? responseData.buy : null;
+            if (!buyData || !buyData.contract_id) throw new Error(localize('The API did not confirm the trade.'));
+
+            setMessage(
+                localize('Trade placed successfully. Contract ID: {{contractId}}', {
+                    contractId: buyData.contract_id,
+                })
+            );
+            setProposal(null);
+        } catch (requestError) {
+            setError(requestError instanceof Error ? requestError.message : localize('Could not place the trade.'));
+        } finally {
+            buyInFlight.current = false;
+            setIsBuying(false);
+        }
+    };
+
+    const formatAmount = (amount: number) =>
+        new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(amount);
+
+    return (
+        <aside className='manual-trading-panel' aria-label={localize('Manual trading and digit analysis')}>
+            <section className='manual-trading-card'>
+                <h2>{localize('Manual trading')}</h2>
+                <p className='manual-trading-caption'>
+                    {localize('Place a single synthetic-index digit contract from your Deriv account.')}
+                </p>
+                <p className={`manual-trading-account ${client.is_virtual ? '' : 'manual-trading-account--real'}`}>
+                    {client.is_logged_in
+                        ? client.is_virtual
+                            ? localize('Demo account')
+                            : localize('REAL account — real money is at risk')
+                        : localize('Log in to enable trading.')}
+                </p>
+                <label>
+                    {localize('Synthetic index')}
+                    <select
+                        value={selectedSymbol}
+                        onChange={event => handleSymbolChange(event.target.value)}
+                        disabled={syntheticSymbols.length === 0 || isQuoting || isBuying}
+                    >
+                        {syntheticSymbols.map(item => (
+                            <option key={item.symbol} value={item.symbol}>
+                                {item.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label>
+                    {localize('Contract')}
+                    <select
+                        value={contractType}
+                        onChange={event =>
+                            updateForm(() => setContractType(event.target.value as DigitContractType))
+                        }
+                        disabled={isQuoting || isBuying}
+                    >
+                        {DIGIT_CONTRACT_TYPES.map(type => (
+                            <option key={type} value={type}>
+                                {CONTRACT_LABELS[type]}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                {contractType !== 'DIGITEVEN' && contractType !== 'DIGITODD' && (
+                    <label>
+                        {localize('Prediction digit')}
+                        <select
+                            value={barrier}
+                            onChange={event => updateForm(() => setBarrier(event.target.value))}
+                            disabled={isQuoting || isBuying}
+                        >
+                            {Array.from({ length: 10 }, (_, digit) => digit)
+                                .filter(digit =>
+                                    contractType === 'DIGITOVER'
+                                        ? digit <= 8
+                                        : contractType === 'DIGITUNDER'
+                                          ? digit >= 1
+                                          : true
+                                )
+                                .map(digit => (
+                                    <option key={digit} value={digit}>
+                                        {digit}
+                                    </option>
+                                ))}
+                        </select>
+                    </label>
+                )}
+
+                <div className='manual-trading-fields'>
+                    <label>
+                        {localize('Stake')} ({client.currency})
+                        <input
+                            type='number'
+                            min='0.01'
+                            step='0.01'
+                            value={stake}
+                            onChange={event => updateForm(() => setStake(event.target.value))}
+                            disabled={isQuoting || isBuying}
+                        />
+                    </label>
+                    <label>
+                        {localize('Duration (ticks)')}
+                        <select
+                            value={duration}
+                            onChange={event => updateForm(() => setDuration(event.target.value))}
+                            disabled={isQuoting || isBuying}
+                        >
+                            {[1, 2, 3, 5, 10, 20, 50].map(ticks => (
+                                <option key={ticks} value={ticks}>
+                                    {ticks === 1 ? localize('1 Tick') : localize('{{ticks}} Ticks', { ticks })}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+
+                <div className='manual-trading-fields'>
+                    <label>
+                        {localize('Stop Loss')} ({client.currency})
+                        <input
+                            type='number'
+                            min='0'
+                            step='0.01'
+                            value={stopLoss}
+                            onChange={event => updateForm(() => setStopLoss(event.target.value))}
+                            disabled={isQuoting || isBuying}
+                            placeholder='0'
+                        />
+                    </label>
+                    <label>
+                        {localize('Take Profit')} ({client.currency})
+                        <input
+                            type='number'
+                            min='0'
+                            step='0.01'
+                            value={takeProfit}
+                            onChange={event => updateForm(() => setTakeProfit(event.target.value))}
+                            disabled={isQuoting || isBuying}
+                            placeholder='0'
+                        />
+                    </label>
+                </div>
+
+                <div className='manual-trading-fields'>
+                    <label>
+                        {localize('Martingale')}
+                        <select
+                            value={martingaleEnabled ? 'on' : 'off'}
+                            onChange={event =>
+                                updateForm(() => setMartingaleEnabled(event.target.value === 'on'))
+                            }
+                            disabled={isQuoting || isBuying}
+                        >
+                            <option value='off'>{localize('Off')}</option>
+                            <option value='on'>{localize('On')}</option>
+                        </select>
+                    </label>
+                    {martingaleEnabled && (
+                        <label>
+                            {localize('Martingale multiplier')}
+                            <input
+                                type='number'
+                                min='1.01'
+                                step='0.1'
+                                value={martingaleMultiplier}
+                                onChange={event => updateForm(() => setMartingaleMultiplier(event.target.value))}
+                                disabled={isQuoting || isBuying}
+                            />
+                        </label>
+                    )}
+                </div>
+
+                <button
+                    className='manual-trading-button'
+                    type='button'
+                    onClick={handleGetQuote}
+                    disabled={isQuoting || isBuying || !client.is_logged_in || !selectedSymbol}
+                >
+                    {isQuoting ? localize('Getting quote…') : localize('Get trade quote')}
+                </button>
+
+                {proposal && (
+                    <div className='manual-trading-quote'>
+                        <p>{proposal.longcode}</p>
+                        <p>{localize('Stake')}: {formatAmount(proposal.stake)} {proposal.currency}</p>
+                        <p>{localize('Purchase price')}: {formatAmount(proposal.ask_price)} {proposal.currency}</p>
+                        <p>
+                            {localize('Potential payout')}: {formatAmount(proposal.payout)} {proposal.currency}
+                        </p>
+                        <button
+                            className='manual-trading-button manual-trading-button--confirm'
+                            type='button'
+                            onClick={handleBuy}
+                            disabled={isBuying}
+                        >
+                            {isBuying ? localize('Placing trade…') : localize('Confirm and buy')}
+                        </button>
+                    </div>
+                )}
+                {error && (
+                    <p className='manual-trading-feedback manual-trading-feedback--error' role='alert'>
+                        {error}
+                    </p>
+                )}
+                {message && (
+                    <p className='manual-trading-feedback' role='status'>
+                        {message}
+                    </p>
+                )}
+            </section>
+            <section className='manual-trading-card manual-trading-analysis' aria-labelledby='manual-digit-analysis-title'>
+                <h2 id='manual-digit-analysis-title'>{localize('Live last digit analysis')}</h2>
+                <p className='manual-trading-analysis__sample'>
+                    {localize('Market')}: {selectedSymbol || localize('Waiting for a market')}
+                    {' · '}
+                    {localize('Sample')}: {analysisPrices.length}
+                </p>
+                {analysisLoading && <p>{localize('Loading live ticks…')}</p>}
+                {analysisError && <p className='manual-trading-feedback manual-trading-feedback--error' role='alert'>{analysisError}</p>}
+                {!analysisLoading && !analysisError && (
+                    <LiveDigitVisualizer
+                        prices={analysisPrices}
+                        pipSize={analysisPrecision}
+                    />
+                )}
+            </section>
+        </aside>
+    );
+});
+
+export default ManualTradingPanel;

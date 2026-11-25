@@ -1,0 +1,249 @@
+.manual-trading-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    height: 100%;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 0 0.4rem 0 0;
+}
+
+.manual-trading-card {
+    background: var(--general-main-1);
+    border: 1px solid var(--border-normal);
+    border-radius: 0.8rem;
+    padding: 1.6rem;
+
+    h2 {
+        color: var(--text-prominent);
+        font-size: 1.8rem;
+        margin: 0 0 0.4rem;
+    }
+
+    label {
+        color: var(--text-general);
+        display: flex;
+        flex-direction: column;
+        font-size: 1.2rem;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    input,
+    select {
+        background: var(--general-section-1);
+        border: 1px solid var(--border-normal);
+        border-radius: 0.4rem;
+        color: var(--text-prominent);
+        font: inherit;
+        min-height: 3.6rem;
+        padding: 0.6rem 0.8rem;
+        width: 100%;
+    }
+}
+
+.manual-trading-caption {
+    color: var(--text-general);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin: 0.4rem 0 1rem;
+}
+
+.manual-trading-account {
+    background: var(--general-section-1);
+    border-radius: 0.4rem;
+    color: var(--text-prominent);
+    font-size: 1.2rem;
+    margin: 1rem 0;
+    padding: 0.8rem;
+
+    &--real {
+        background: color-mix(in srgb, var(--status-danger) 12%, var(--general-section-1));
+        color: var(--status-danger);
+    }
+}
+
+.manual-trading-fields {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+}
+
+.manual-trading-button {
+    background: var(--brand-primary);
+    border: 0;
+    border-radius: 0.4rem;
+    color: var(--text-prominent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    margin-top: 1.2rem;
+    min-height: 3.8rem;
+    padding: 0.8rem 1rem;
+    width: 100%;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+    &--confirm {
+        background: var(--brand-success);
+    }
+}
+
+.manual-trading-quote {
+    background: var(--general-section-1);
+    border-radius: 0.4rem;
+    color: var(--text-prominent);
+    font-size: 1.2rem;
+    margin-top: 1.2rem;
+    padding: 1rem;
+
+    p {
+        line-height: 1.5;
+        margin: 0 0 0.5rem;
+    }
+}
+
+.manual-trading-feedback {
+    color: var(--status-success);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    margin: 1rem 0 0;
+
+    &--error {
+        color: var(--status-danger);
+    }
+}
+
+.manual-trading-analysis {
+    &__sample {
+        color: var(--text-general);
+        font-size: 1.2rem;
+        margin: 0 0 0.8rem;
+    }
+
+    .live-digit-visualizer {
+        display: grid;
+        gap: 1.2rem;
+        margin: 0 auto;
+        max-width: 34rem;
+        padding: 0.8rem;
+        position: relative;
+        width: 100%;
+
+        &::before {
+            border: 1px solid color-mix(in srgb, var(--brand-primary) 35%, transparent);
+            border-radius: 1rem;
+            content: '';
+            inset: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        &__row {
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        &__item {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        &__circle {
+            align-items: center;
+            aspect-ratio: 1;
+            background: var(--general-section-1);
+            border: 0.2rem solid var(--border-normal);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 5.6rem;
+            transition: border-color 180ms ease, transform 220ms ease, box-shadow 220ms ease;
+            width: 100%;
+
+            strong {
+                font-size: clamp(1.4rem, 2.2vw, 2rem);
+            }
+
+            small {
+                font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+            }
+        }
+
+        &__item--high &__circle {
+            border-color: var(--status-success);
+            box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--status-success) 18%, transparent);
+        }
+
+        &__item--low &__circle {
+            border-color: var(--status-danger);
+        }
+
+        &__item--active &__circle {
+            transform: scale(1.12);
+            box-shadow: 0 0 1.2rem color-mix(in srgb, var(--brand-primary) 35%, transparent);
+        }
+
+        &__pointer {
+            color: transparent;
+            font-size: 1.2rem;
+            height: 1.4rem;
+            line-height: 1.4rem;
+            margin-top: 0.2rem;
+            opacity: 0;
+            transform: translateY(0.5rem);
+            transition: color 220ms ease, opacity 220ms ease, transform 220ms ease;
+        }
+
+        &__item--active &__pointer {
+            color: var(--brand-primary);
+            opacity: 1;
+            transform: translateY(0);
+            animation: live-digit-pointer 260ms ease-out;
+        }
+
+    }
+
+    &__parity {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-prominent);
+        font-size: 1.2rem;
+        margin-bottom: 1.2rem;
+    }
+
+    &__digits {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    &__digit {
+        align-items: center;
+        color: var(--text-general);
+        display: grid;
+        font-size: 1.1rem;
+        gap: 0.6rem;
+        grid-template-columns: 1.2rem minmax(2rem, 1fr) 5rem;
+    }
+
+    &__bar {
+        background: var(--general-section-1);
+        border-radius: 0.4rem;
+        height: 0.8rem;
+        overflow: hidden;
+
+        span {
+            background: var(--brand-primary);
+            display: block;
+            height: 100%;
+        }
+    }
+}
