@@ -1,4 +1,4 @@
-import { getContractPayout, getContractProfit, getRoundedNumber } from '@/components/shared';
+import { getContractPayout, getContractProfit, getRoundedNumber, isContractWon } from '@/components/shared';
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { LogTypes } from '../../../constants/messages';
 import { createError } from '../../../utils/error';
@@ -36,10 +36,11 @@ export default Engine =>
 
         updateTotals(contract) {
             const { currency } = contract;
+            const buyPrice = Number(contract.buy_price);
             const sellPrice = getContractPayout(contract);
             const profit = getRoundedNumber(getContractProfit(contract), currency);
 
-            const win = profit > 0 && sellPrice > 0;
+            const win = isContractWon(contract);
 
             const accountStat = this.getAccountStat();
 

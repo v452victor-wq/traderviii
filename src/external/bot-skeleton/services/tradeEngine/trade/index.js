@@ -33,30 +33,28 @@ const watchDuring = store =>
         passFlag: 'openContract',
     });
 
-/* The watchScope function is called randomly and resets the prevTick
- * which leads to the same problem we try to solve. So prevTick is isolated
- */
-let prevTick;
 const watchScope = ({ store, stopScope, passScope, passFlag }) => {
     // in case watch is called after stop is fired
     if (store.getState().scope === stopScope) {
         return Promise.resolve(false);
     }
+    let previousTick = store.getState().newTick;
     return new Promise(resolve => {
         const unsubscribe = store.subscribe(() => {
             const newState = store.getState();
 
-            if (newState.newTick === prevTick) return;
-            prevTick = newState.newTick;
+            if (newState.scope === stopScope) {
+                unsubscribe();
+                resolve(false);
+                return;
+            }
+
+            if (newState.newTick === previousTick) return;
+            previousTick = newState.newTick;
 
             if (newState.scope === passScope && newState[passFlag]) {
                 unsubscribe();
                 resolve(true);
-            }
-
-            if (newState.scope === stopScope) {
-                unsubscribe();
-                resolve(false);
             }
         });
     });

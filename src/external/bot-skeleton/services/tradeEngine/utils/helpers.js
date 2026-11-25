@@ -4,6 +4,7 @@ import {
     getContractPayout,
     getContractProfit,
     getRoundedNumber,
+    isContractWon,
     isEmptyObject,
 } from '@/components/shared';
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
@@ -310,7 +311,7 @@ export const createDetails = contract => {
     const buyPriceNumber = Number(buyPrice);
     const sellPrice = getContractPayout(contract);
     const profit = getRoundedNumber(getContractProfit(contract), currency);
-    const result = profit > 0 && sellPrice > 0 ? 'win' : 'loss';
+    const result = isContractWon(contract) ? 'win' : 'loss';
 
     return [
         contract.transaction_ids.buy,

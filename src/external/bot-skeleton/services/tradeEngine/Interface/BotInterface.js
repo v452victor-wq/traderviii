@@ -1,3 +1,4 @@
+import { isEnded } from '@/components/shared';
 import { observer as globalObserver } from '../../../utils/observer';
 import { createDetails } from '../utils/helpers';
 
@@ -15,7 +16,7 @@ const getBotInterface = tradeEngine => {
         isSellAvailable: () => tradeEngine.isSellAtMarketAvailable(),
         sellAtMarket: () => tradeEngine.sellAtMarket(),
         getSellPrice: () => getSellPrice(tradeEngine),
-        isResult: result => getDetail(10) === result,
+        isResult: result => isEnded(tradeEngine.data.contract) && getDetail(10) === result,
         isTradeAgain: result => globalObserver.emit('bot.trade_again', result),
         readDetails: i => getDetail(i - 1),
     };

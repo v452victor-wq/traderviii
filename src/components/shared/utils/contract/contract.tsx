@@ -120,7 +120,13 @@ export const getContractProfit = (contract_info: TContractInfo) => {
 export const isContractWon = (contract_info: TContractInfo) => {
     const payout = getContractPayout(contract_info);
     const profit = getContractProfit(contract_info);
-    return Number.isFinite(profit) && profit > 0 && payout > 0;
+    return (
+        contract_info.status !== 'lost' &&
+        contract_info.status !== 'cancelled' &&
+        Number.isFinite(profit) &&
+        profit > 0 &&
+        payout > 0
+    );
 };
 
 export const getContractStatus = (contract_info: TContractInfo) => {

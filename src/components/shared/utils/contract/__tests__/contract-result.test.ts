@@ -32,6 +32,14 @@ describe('contract result classification', () => {
         expect(isContractWon(createContract({ profit: 0 }))).toBe(false);
     });
 
+    it('does not classify a closed losing contract as won from stale positive amounts', () => {
+        expect(isContractWon(createContract({ status: 'lost', profit: 1, sell_price: 2 }))).toBe(false);
+    });
+
+    it('classifies a positive payout with negative profit as lost', () => {
+        expect(isContractWon(createContract({ profit: -0.5, sell_price: 0.5 }))).toBe(false);
+    });
+
     it('derives profit from payout and stake when reported profit is missing', () => {
         expect(isContractWon(createContract({ profit: undefined }))).toBe(true);
         expect(isContractWon(createContract({ profit: undefined, sell_price: 1 }))).toBe(false);
