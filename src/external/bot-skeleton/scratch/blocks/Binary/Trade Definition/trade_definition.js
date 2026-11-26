@@ -15,6 +15,19 @@ window.Blockly.Blocks.trade_definition = {
         this.jsonInit(this.definition());
         this.setDeletable(false);
         this.isInit = false;
+        this.allowAllDigitContracts = false;
+    },
+    mutationToDom() {
+        if (!this.allowAllDigitContracts) {
+            return null;
+        }
+
+        const container = document.createElement('mutation');
+        container.setAttribute('allow_all_digit_contracts', 'true');
+        return container;
+    },
+    domToMutation(xmlElement) {
+        this.allowAllDigitContracts = xmlElement.getAttribute('allow_all_digit_contracts') === 'true';
     },
     definition() {
         return {
@@ -183,10 +196,11 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition = block 
     const should_restart_on_buy_sell = restart_on_buy_sell_block.getFieldValue('TIME_MACHINE_ENABLED') !== 'FALSE';
 
     const { opposites } = config();
-    const contract_type_list =
-        contract_type === 'both'
-            ? opposites[trade_type.toUpperCase()].map(opposite => Object.keys(opposite)[0])
-            : [contract_type];
+    const contract_type_list = block.allowAllDigitContracts
+        ? ['DIGITOVER', 'DIGITUNDER', 'DIGITEVEN', 'DIGITODD']
+        : contract_type === 'both'
+          ? opposites[trade_type.toUpperCase()].map(opposite => Object.keys(opposite)[0])
+          : [contract_type];
 
     const initialization = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'INITIALIZATION');
     const trade_options_statement = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'SUBMARKET');

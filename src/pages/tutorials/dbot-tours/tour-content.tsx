@@ -483,7 +483,7 @@ export const BOT_BUILDER_MOBILE: TMobileTourConfig[] = [
 
 export const DBOT_ONBOARDING_MOBILE: TMobileTourConfig[] = [
     {
-        header: <Localize i18n_default_text='Welcome to Deriv Bot' />,
+        header: <Localize i18n_default_text='Welcome to ViiTrader' />,
         content: [
             <span key='get-started-on-deriv-bot-wrapper'>
                 <Localize
@@ -615,7 +615,7 @@ export const getTourDialogAction = (is_mobile: boolean) => {
 };
 
 export const onboarding_tour_header = (
-    <Localize key='onboarding-tour-header' i18n_default_text='Welcome to Deriv Bot' />
+    <Localize key='onboarding-tour-header' i18n_default_text='Welcome to ViiTrader' />
 );
 
 export const getBotBuilderTourHeader = (is_mobile: boolean) => {

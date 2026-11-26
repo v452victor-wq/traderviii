@@ -9,6 +9,20 @@ window.Blockly.Blocks.purchase = {
         // Ensure one of this type per statement-stack
         this.setNextStatement(false);
     },
+    mutationToDom() {
+        if (!this.getInput('PREDICTION')) {
+            return null;
+        }
+
+        const container = document.createElement('mutation');
+        container.setAttribute('has_prediction', 'true');
+        return container;
+    },
+    domToMutation(xmlElement) {
+        if (xmlElement.getAttribute('has_prediction') === 'true') {
+            this.appendValueInput('PREDICTION').setCheck('Number').appendField(localize('with prediction'));
+        }
+    },
     definition() {
         return {
             message0: localize('Purchase {{ contract_type }}', { contract_type: '%1' }),
@@ -66,7 +80,12 @@ window.Blockly.Blocks.purchase = {
             const contract_type = contract_type_block.getFieldValue('TYPE_LIST');
             const purchase_type_list = this.getField('PURCHASE_LIST');
             const purchase_type = purchase_type_list.getValue();
-            const contract_type_options = getContractTypeOptions(contract_type, trade_type);
+            const contract_type_options = trade_definition_block.allowAllDigitContracts
+                ? [
+                      ...getContractTypeOptions('both', 'overunder'),
+                      ...getContractTypeOptions('both', 'evenodd'),
+                  ]
+                : getContractTypeOptions(contract_type, trade_type);
 
             purchase_type_list.updateOptions(contract_type_options, {
                 default_value: purchase_type,
@@ -85,7 +104,14 @@ window.Blockly.Blocks.purchase = {
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
+    const prediction = block.getInput('PREDICTION')
+        ? window.Blockly.JavaScript.javascriptGenerator.valueToCode(
+              block,
+              'PREDICTION',
+              window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC
+          )
+        : '';
 
-    const code = `Bot.purchase('${purchaseList}');\n`;
+    const code = `Bot.purchase('${purchaseList}'${prediction ? `, ${prediction}` : ''});\n`;
     return code;
 };

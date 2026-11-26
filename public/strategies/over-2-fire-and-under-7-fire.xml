@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml xmlns="http://www.w3.org/1999/xhtml" collection="false" is_dbot="true">
+  <!--
+    Over 2 Fire and Under 7 Fire
+    Flat stake: USD 0.35, duration: 1 tick.
+    Main: first pair of consecutive digits <= 2 buys DIGITOVER barrier 2;
+    first pair of consecutive digits >= 7 buys DIGITUNDER barrier 7.
+    On loss, recovery immediately selects DIGITEVEN/DIGITODD from the latest
+    six digits. Odd majority selects Even; even majority selects Odd; a tie
+    selects Even. Three consecutive losses reset recovery and resume main search.
+    Stop at cumulative session profit >= 5 or <= -5.
+    This XML uses ViiTrader's Blockly extension for all four digit contracts
+    and per-purchase predictions; generic DBot builders may not support it.
+    Confirm last_digit and lastDigitList read the live tick stream in the target.
+  -->
+  <variables>
+    <variable id="consecutive_losses">Consecutive losses</variable>
+    <variable id="recovery_mode">Recovery mode</variable>
+    <variable id="low_streak">Low streak</variable>
+    <variable id="high_streak">High streak</variable>
+    <variable id="odd_count">Odd count</variable>
+    <variable id="even_count">Even count</variable>
+    <variable id="digit_loop">Digit</variable>
+  </variables>
+  <block type="trade_definition" id="trade_definition" x="0" y="0">
+    <mutation allow_all_digit_contracts="true"></mutation>
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="market">
+        <field name="MARKET_LIST">volidx</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">1HZ100V</field>
+        <next>
+          <block type="trade_definition_tradetype" id="trade_type">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="contract_type">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="candle_interval">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="restart_buy_sell">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="restart_on_error">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="initialize_losses">
+        <field name="VAR" id="consecutive_losses">Consecutive losses</field>
+        <value name="VALUE">
+          <block type="math_number" id="initial_losses">
+            <field name="NUM">0</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="initialize_recovery">
+            <field name="VAR" id="recovery_mode">Recovery mode</field>
+            <value name="VALUE">
+              <block type="logic_boolean" id="initial_recovery_value">
+                <field name="BOOL">FALSE</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="initialize_low_streak">
+                <field name="VAR" id="low_streak">Low streak</field>
+                <value name="VALUE">
+                  <block type="math_number" id="initial_low_streak">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="initialize_high_streak">
+                    <field name="VAR" id="high_streak">High streak</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="initial_high_streak">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="initialize_odd_count">
+                        <field name="VAR" id="odd_count">Odd count</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="initial_odd_count">
+                            <field name="NUM">0</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="initialize_even_count">
+                            <field name="VAR" id="even_count">Even count</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="initial_even_count">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="trade_options">
+        <mutation has_first_barrier="false" has_second_barrier="false" has_prediction="false"></mutation>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <field name="CURRENCY_LIST">USD</field>
+        <value name="DURATION">
+          <block type="math_number" id="duration">
+            <field name="NUM">1</field>
+          </block>
+        </value>
+        <value name="AMOUNT">
+          <block type="math_number" id="flat_stake">
+            <field name="NUM">0.35</field>
+          </block>
+        </value>
+        <field name="AMOUNT_LIMITS"></field>
+      </block>
+    </statement>
+  </block>
+  <block type="during_purchase" id="during_purchase" x="720" y="0"></block>
+  <block type="after_purchase" id="after_purchase" x="720" y="248">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="variables_set" id="clear_low_streak">
+        <field name="VAR" id="low_streak">Low streak</field>
+        <value name="VALUE">
+          <block type="math_number" id="clear_low_value">
+            <field name="NUM">0</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="clear_high_streak">
+            <field name="VAR" id="high_streak">High streak</field>
+            <value name="VALUE">
+              <block type="math_number" id="clear_high_value">
+                <field name="NUM">0</field>
+              </block>
+            </value>
+            <next>
+              <block type="controls_if" id="update_loss_state">
+                <mutation else="1"></mutation>
+                <value name="IF0">
+                  <block type="contract_check_result" id="check_last_loss">
+                    <field name="CHECK_RESULT">loss</field>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="math_change" id="increment_losses">
+                    <field name="VAR" id="consecutive_losses">Consecutive losses</field>
+                    <value name="DELTA">
+                      <block type="math_number" id="loss_increment">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="controls_if" id="check_three_losses">
+                        <mutation else="1"></mutation>
+                        <value name="IF0">
+                          <block type="logic_compare" id="loss_count_reached_three">
+                            <field name="OP">GTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="read_loss_count">
+                                <field name="VAR" id="consecutive_losses">Consecutive losses</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="three_loss_limit">
+                                <field name="NUM">3</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="variables_set" id="reset_losses_after_three">
+                            <field name="VAR" id="consecutive_losses">Consecutive losses</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="reset_loss_count">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="exit_recovery_after_three">
+                                <field name="VAR" id="recovery_mode">Recovery mode</field>
+                                <value name="VALUE">
+                                  <block type="logic_boolean" id="recovery_false_after_three">
+                                    <field name="BOOL">FALSE</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </next>
+                          </block>
+                        </statement>
+                        <statement name="ELSE">
+                          <block type="variables_set" id="enter_recovery_after_loss">
+                            <field name="VAR" id="recovery_mode">Recovery mode</field>
+                            <value name="VALUE">
+                              <block type="logic_boolean" id="recovery_true_after_loss">
+                                <field name="BOOL">TRUE</field>
+                              </block>
+                            </value>
+                          </block>
+                        </statement>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
+                <statement name="ELSE">
+                  <block type="variables_set" id="reset_losses_after_win">
+                    <field name="VAR" id="consecutive_losses">Consecutive losses</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="zero_losses_after_win">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="exit_recovery_after_win">
+                        <field name="VAR" id="recovery_mode">Recovery mode</field>
+                        <value name="VALUE">
+                          <block type="logic_boolean" id="recovery_false_after_win">
+                            <field name="BOOL">FALSE</field>
+                          </block>
+                        </value>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
+                <next>
+                  <block type="controls_if" id="check_stop_loss">
+                    <value name="IF0">
+                      <block type="logic_compare" id="above_stop_loss">
+                        <field name="OP">GT</field>
+                        <value name="A">
+                          <block type="total_profit" id="stop_loss_profit"></block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="stop_loss_limit">
+                            <field name="NUM">-5</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="controls_if" id="check_take_profit">
+                        <value name="IF0">
+                          <block type="logic_compare" id="below_take_profit">
+                            <field name="OP">LT</field>
+                            <value name="A">
+                              <block type="total_profit" id="take_profit_total"></block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="take_profit_limit">
+                                <field name="NUM">5</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="trade_again" id="trade_again"></block>
+                        </statement>
+                      </block>
+                    </statement>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="before_purchase" id="before_purchase" x="0" y="576">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="controls_if" id="select_recovery_or_main">
+        <mutation else="1"></mutation>
+        <value name="IF0">
+          <block type="variables_get" id="read_recovery_mode">
+            <field name="VAR" id="recovery_mode">Recovery mode</field>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="variables_set" id="reset_odd_count">
+            <field name="VAR" id="odd_count">Odd count</field>
+            <value name="VALUE">
+              <block type="math_number" id="zero_odd_count">
+                <field name="NUM">0</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="reset_even_count">
+                <field name="VAR" id="even_count">Even count</field>
+                <value name="VALUE">
+                  <block type="math_number" id="zero_even_count">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="controls_forEach" id="count_recent_six">
+                    <field name="VAR" id="digit_loop">Digit</field>
+                    <value name="LIST">
+                      <block type="lists_getSublist" id="last_six_digits">
+                        <mutation at1="true" at2="false"></mutation>
+                        <field name="WHERE1">FROM_END</field>
+                        <field name="WHERE2">LAST</field>
+                        <value name="LIST">
+                          <block type="lastDigitList" id="digit_history"></block>
+                        </value>
+                        <value name="AT1">
+                          <block type="math_number" id="sixth_from_end">
+                            <field name="NUM">5</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO">
+                      <block type="controls_if" id="count_odd_or_even">
+                        <mutation else="1"></mutation>
+                        <value name="IF0">
+                          <block type="logic_compare" id="digit_is_odd">
+                            <field name="OP">EQ</field>
+                            <value name="A">
+                              <block type="math_modulo" id="digit_modulo_two">
+                                <value name="DIVIDEND">
+                                  <block type="variables_get" id="read_digit_loop">
+                                    <field name="VAR" id="digit_loop">Digit</field>
+                                  </block>
+                                </value>
+                                <value name="DIVISOR">
+                                  <block type="math_number" id="parity_divisor">
+                                    <field name="NUM">2</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="odd_remainder">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="math_change" id="increment_odd_count">
+                            <field name="VAR" id="odd_count">Odd count</field>
+                            <value name="DELTA">
+                              <block type="math_number" id="odd_count_increment">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </statement>
+                        <statement name="ELSE">
+                          <block type="math_change" id="increment_even_count">
+                            <field name="VAR" id="even_count">Even count</field>
+                            <value name="DELTA">
+                              <block type="math_number" id="even_count_increment">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </statement>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="choose_recovery_contract">
+                        <mutation else="1"></mutation>
+                        <value name="IF0">
+                          <block type="logic_compare" id="odd_count_not_greater">
+                            <field name="OP">GTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="read_odd_count">
+                                <field name="VAR" id="odd_count">Odd count</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="variables_get" id="read_even_count">
+                                <field name="VAR" id="even_count">Even count</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="purchase" id="buy_even_recovery">
+                            <field name="PURCHASE_LIST">DIGITEVEN</field>
+                          </block>
+                        </statement>
+                        <statement name="ELSE">
+                          <block type="purchase" id="buy_odd_recovery">
+                            <field name="PURCHASE_LIST">DIGITODD</field>
+                          </block>
+                        </statement>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="controls_if" id="update_low_streak">
+            <mutation else="1"></mutation>
+            <value name="IF0">
+              <block type="logic_compare" id="digit_at_most_two">
+                <field name="OP">LTE</field>
+                <value name="A">
+                  <block type="last_digit" id="current_low_digit"></block>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="low_digit_threshold">
+                    <field name="NUM">2</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="math_change" id="increment_low_streak">
+                <field name="VAR" id="low_streak">Low streak</field>
+                <value name="DELTA">
+                  <block type="math_number" id="low_streak_increment">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="variables_set" id="reset_low_streak">
+                <field name="VAR" id="low_streak">Low streak</field>
+                <value name="VALUE">
+                  <block type="math_number" id="zero_low_streak">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <next>
+              <block type="controls_if" id="update_high_streak">
+                <mutation else="1"></mutation>
+                <value name="IF0">
+                  <block type="logic_compare" id="digit_at_least_seven">
+                    <field name="OP">GTE</field>
+                    <value name="A">
+                      <block type="last_digit" id="current_high_digit"></block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="high_digit_threshold">
+                        <field name="NUM">7</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="math_change" id="increment_high_streak">
+                    <field name="VAR" id="high_streak">High streak</field>
+                    <value name="DELTA">
+                      <block type="math_number" id="high_streak_increment">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+                <statement name="ELSE">
+                  <block type="variables_set" id="reset_high_streak">
+                    <field name="VAR" id="high_streak">High streak</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="zero_high_streak">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+                <next>
+                  <block type="controls_if" id="choose_main_contract">
+                    <mutation else="1"></mutation>
+                    <value name="IF0">
+                      <block type="logic_compare" id="low_trigger_reached">
+                        <field name="OP">GTE</field>
+                        <value name="A">
+                          <block type="variables_get" id="read_low_streak">
+                            <field name="VAR" id="low_streak">Low streak</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="two_low_ticks">
+                            <field name="NUM">2</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="purchase" id="buy_over_two">
+                        <mutation has_prediction="true"></mutation>
+                        <field name="PURCHASE_LIST">DIGITOVER</field>
+                        <value name="PREDICTION">
+                          <block type="math_number" id="over_two_prediction">
+                            <field name="NUM">2</field>
+                          </block>
+                        </value>
+                      </block>
+                    </statement>
+                    <statement name="ELSE">
+                      <block type="controls_if" id="check_under_trigger">
+                        <value name="IF0">
+                          <block type="logic_compare" id="high_trigger_reached">
+                            <field name="OP">GTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="read_high_streak">
+                                <field name="VAR" id="high_streak">High streak</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="two_high_ticks">
+                                <field name="NUM">2</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="purchase" id="buy_under_seven">
+                            <mutation has_prediction="true"></mutation>
+                            <field name="PURCHASE_LIST">DIGITUNDER</field>
+                            <value name="PREDICTION">
+                              <block type="math_number" id="under_seven_prediction">
+                                <field name="NUM">7</field>
+                              </block>
+                            </value>
+                          </block>
+                        </statement>
+                      </block>
+                    </statement>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+</xml>

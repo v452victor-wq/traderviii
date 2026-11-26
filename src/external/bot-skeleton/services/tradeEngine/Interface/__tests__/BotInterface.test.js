@@ -1,6 +1,19 @@
 import getBotInterface from '../BotInterface';
 
 describe('bot contract results', () => {
+    it('forwards a per-purchase prediction to the trade engine', () => {
+        const purchase = jest.fn();
+        const bot = getBotInterface({
+            data: { contract: {} },
+            getPurchaseReference: () => undefined,
+            purchase,
+        });
+
+        bot.purchase('DIGITUNDER', 7);
+
+        expect(purchase).toHaveBeenCalledWith('DIGITUNDER', 7);
+    });
+
     it('uses the closed contract status and payout for Blockly result checks', () => {
         const bot = getBotInterface({
             data: {

@@ -10,7 +10,7 @@ let purchase_reference;
 
 export default Engine =>
     class Purchase extends Engine {
-        purchase(contract_type) {
+        purchase(contract_type, prediction) {
             // Prevent calling purchase twice
             if (this.store.getState().scope !== BEFORE_PURCHASE) {
                 return Promise.resolve();
@@ -82,7 +82,9 @@ export default Engine =>
                     delayIndex++
                 ).then(onSuccess);
             }
-            const trade_option = tradeOptionToBuy(contract_type, this.tradeOptions);
+            const trade_options =
+                prediction === undefined ? this.tradeOptions : { ...this.tradeOptions, prediction };
+            const trade_option = tradeOptionToBuy(contract_type, trade_options);
             const action = () => api_base.api.send(trade_option);
 
             this.isSold = false;
