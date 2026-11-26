@@ -13,6 +13,7 @@ import {
     runIrreversibleEvents,
     setCurrency,
 } from '../../../utils';
+import { getTradeOptionsPrediction } from './trade-options-prediction';
 
 window.Blockly.Blocks.trade_definition_tradeoptions = {
     durations: [],
@@ -653,12 +654,15 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition_tradeopt
     let prediction_value, barrier_offset_value, second_barrier_offset_value;
 
     if (block.getInput('PREDICTION')) {
-        prediction_value =
+        const generated_prediction =
             window.Blockly.JavaScript.javascriptGenerator.valueToCode(
                 block,
                 'PREDICTION',
                 window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC
-            ) || '-1';
+            );
+        prediction_value = getTradeOptionsPrediction(true, generated_prediction);
+    } else {
+        prediction_value = getTradeOptionsPrediction(false);
     }
 
     if (block.getInput('BARRIEROFFSET')) {

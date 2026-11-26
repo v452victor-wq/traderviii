@@ -324,7 +324,7 @@
                         </value>
                         <value name="AT1">
                           <block type="math_number" id="sixth_from_end">
-                            <field name="NUM">5</field>
+                            <field name="NUM">6</field>
                           </block>
                         </value>
                       </block>

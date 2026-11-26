@@ -33,6 +33,19 @@
         padding-inline-start: 1rem;
     }
 
+    &__other-bots {
+        margin: 2rem auto 0;
+        max-width: 100rem;
+
+        summary {
+            color: #f2c65d;
+            cursor: pointer;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+        }
+    }
+
     &__grid {
         display: grid;
         gap: 1.2rem;

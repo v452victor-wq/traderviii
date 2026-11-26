@@ -5,6 +5,7 @@ import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { buildMasterBotXml, FREE_BOT_TEMPLATES } from './bot-templates';
+import { setFireStrategyStake } from './fire-strategy';
 import './free-bots.scss';
 
 const fireStrategy = {
@@ -21,6 +22,7 @@ const FreeBots = observer(() => {
     const [loadingBotId, setLoadingBotId] = useState('');
     const [feedback, setFeedback] = useState('');
     const [feedbackIsError, setFeedbackIsError] = useState(false);
+    const [fireStake, setFireStake] = useState('0.35');
     const [consecutiveTicks, setConsecutiveTicks] = useState<Record<string, number>>(
         Object.fromEntries(FREE_BOT_TEMPLATES.map(bot => [bot.id, bot.defaultConsecutiveTicks]))
     );
@@ -34,6 +36,14 @@ const FreeBots = observer(() => {
         Object.fromEntries(FREE_BOT_TEMPLATES.map(bot => [bot.id, '5']))
     );
     const [symbol, setSymbol] = useState('R_100');
+
+    const getFireStrategyXml = async () => {
+        const response = await fetch(fireStrategy.xmlUrl);
+        if (!response.ok) {
+            throw new Error(localize('Could not load the Over 2 Fire and Under 7 Fire strategy.'));
+        }
+        return setFireStrategyStake(await response.text(), fireStake);
+    };
 
     const loadFireStrategy = async () => {
         const workspace = window.Blockly?.derivWorkspace;
@@ -57,15 +67,7 @@ const FreeBots = observer(() => {
         const strategyId = `free-${fireStrategy.id}-${Date.now()}`;
 
         try {
-            const response = await fetch(fireStrategy.xmlUrl);
-            if (!response.ok) {
-                throw new Error(localize('Could not load the Over 2 Fire and Under 7 Fire strategy.'));
-            }
-            const xml = await response.text();
-            const xmlDocument = new DOMParser().parseFromString(xml, 'application/xml');
-            if (xmlDocument.querySelector('parsererror')) {
-                throw new Error(localize('The Over 2 Fire and Under 7 Fire strategy file is invalid.'));
-            }
+            const xml = await getFireStrategyXml();
 
             await load_modal.loadStrategyToBuilder(
                 {
@@ -89,6 +91,26 @@ const FreeBots = observer(() => {
                     ? error.message
                     : localize('The Over 2 Fire and Under 7 Fire strategy could not be loaded.')
             );
+            setFeedbackIsError(true);
+        } finally {
+            setLoadingBotId('');
+        }
+    };
+
+    const downloadFireStrategy = async () => {
+        setLoadingBotId(fireStrategy.id);
+        setFeedback('');
+        setFeedbackIsError(false);
+        try {
+            const file = new Blob([await getFireStrategyXml()], { type: 'application/xml' });
+            const fileUrl = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.href = fileUrl;
+            link.download = `${fireStrategy.id}.xml`;
+            link.click();
+            URL.revokeObjectURL(fileUrl);
+        } catch (error) {
+            setFeedback(error instanceof Error ? error.message : localize('Could not download the strategy.'));
             setFeedbackIsError(true);
         } finally {
             setLoadingBotId('');
@@ -189,53 +211,24 @@ const FreeBots = observer(() => {
                 </p>
             </header>
 
-            <section className='free-bots__settings' aria-label={localize('Bot settings')}>
-                <label>
-                    {localize('Market')}
-                    <select value={symbol} onChange={event => setSymbol(event.target.value)}>
-                        <option value='R_10'>Volatility 10 (1s)</option>
-                        <option value='R_25'>Volatility 25</option>
-                        <option value='R_50'>Volatility 50</option>
-                        <option value='R_75'>Volatility 75</option>
-                        <option value='R_100'>Volatility 100</option>
-                        <option value='JD10'>Jump 10</option>
-                        <option value='JD25'>Jump 25</option>
-                        <option value='JD50'>Jump 50</option>
-                        <option value='JD75'>Jump 75</option>
-                        <option value='JD100'>Jump 100</option>
-                    </select>
-                </label>
-                <label>{localize('Stake')}<input type='number' min='0.01' step='0.01' value={stake} onChange={e => setStake(e.target.value)} /></label>
-                <label>{localize('Stop Loss')}<input type='number' min='0' step='0.01' value={stopLoss} onChange={e => setStopLoss(e.target.value)} /></label>
-                <label>{localize('Take Profit')}<input type='number' min='0' step='0.01' value={takeProfit} onChange={e => setTakeProfit(e.target.value)} /></label>
-                <label>
-                    {localize('Martingale')}
-                    <select value={martingale ? 'on' : 'off'} onChange={e => setMartingale(e.target.value === 'on')}>
-                        <option value='off'>{localize('Off')}</option>
-                        <option value='on'>{localize('On')}</option>
-                    </select>
-                </label>
-                {martingale && (
-                    <label>{localize('Multiplier')}<input type='number' min='1.01' step='0.1' value={martingaleMultiplier} onChange={e => setMartingaleMultiplier(e.target.value)} /></label>
-                )}
-                <label>
-                    {localize('Tick duration')}
-                    <select value={tickDuration} onChange={e => setTickDuration(e.target.value)}>
-                        {[1, 2, 3, 5, 10, 20, 50].map(ticks => (
-                            <option key={ticks} value={ticks}>{ticks === 1 ? localize('1 Tick') : localize('{{ticks}} Ticks', { ticks })}</option>
-                        ))}
-                    </select>
-                </label>
-            </section>
-
             <div className='free-bots__grid'>
                 <article className='free-bots__card' key={fireStrategy.id}>
                     <h2>{fireStrategy.name}</h2>
                     <p>
                         {localize(
-                            'Flat $0.35 stake, 1-tick contracts, automatic Over 2 / Under 7 entry triggers, Even/Odd recovery, and $5 profit/loss limits.'
+                            'Only set your stake below. Volatility 100 (1s), 1-tick duration, Over 2 / Under 7 triggers, six-digit Even/Odd recovery, flat staking, three-loss reset, and $5 profit/loss limits are preconfigured.'
                         )}
                     </p>
+                    <label className='free-bots__count'>
+                        {localize('Stake (USD)')}
+                        <input
+                            type='number'
+                            min='0.01'
+                            step='0.01'
+                            value={fireStake}
+                            onChange={event => setFireStake(event.target.value)}
+                        />
+                    </label>
                     <div className='free-bots__actions'>
                         <button
                             type='button'
@@ -249,87 +242,137 @@ const FreeBots = observer(() => {
                                 <Localize i18n_default_text='Load in Bot Builder' />
                             )}
                         </button>
-                        <a
+                        <button
+                            type='button'
                             className='free-bots__download'
-                            href={fireStrategy.xmlUrl}
-                            download={`${fireStrategy.id}.xml`}
+                            onClick={downloadFireStrategy}
+                            disabled={!!loadingBotId}
                         >
                             <Localize i18n_default_text='Download XML' />
-                        </a>
+                        </button>
                     </div>
                 </article>
-                {FREE_BOT_TEMPLATES.map(bot => (
-                    <article className='free-bots__card' key={bot.id}>
-                        <h2>{bot.name}</h2>
-                        <p>{bot.description}</p>
-                        <label className='free-bots__count'>
-                            {localize('Consecutive tick entry count')}
-                            <input
-                                type='number'
-                                min='1'
-                                max='100'
-                                value={consecutiveTicks[bot.id] ?? bot.defaultConsecutiveTicks}
-                                onChange={event =>
-                                    setConsecutiveTicks(current => ({
-                                        ...current,
-                                        [bot.id]: Math.max(1, Math.min(100, Number(event.target.value) || 1)),
-                                    }))
-                                }
-                            />
-                        </label>
-                        {(bot.contractType === 'DIGITDIFF' ||
-                            bot.contractType === 'DIGITUNDER' ||
-                            bot.contractType === 'DIGITOVER') && (
-                            <label className='free-bots__count'>
-                                {bot.contractType === 'DIGITDIFF'
-                                    ? localize('Entry digit and Differs target')
-                                    : bot.contractType === 'DIGITUNDER'
-                                      ? localize('Over entry threshold')
-                                      : localize('Under entry threshold')}
-                                <select
-                                    value={targetDigits[bot.id] ?? '5'}
-                                    onChange={event =>
-                                        setTargetDigits(current => ({ ...current, [bot.id]: event.target.value }))
-                                    }
-                                >
-                                    {Array.from({ length: 10 }, (_, digit) => digit)
-                                        .filter(
-                                            digit =>
-                                                bot.contractType === 'DIGITDIFF' ||
-                                                (digit >= 1 && digit <= 8)
-                                        )
-                                        .map(digit => (
-                                            <option key={digit} value={digit}>
-                                                {digit}
-                                            </option>
-                                        ))}
-                                </select>
-                            </label>
-                        )}
-                        <div className='free-bots__actions'>
-                            <button
-                                type='button'
-                                className='free-bots__button'
-                                onClick={() => loadBot(bot)}
-                                disabled={is_loading || !!loadingBotId}
-                            >
-                                {loadingBotId === bot.id ? (
-                                    <Localize i18n_default_text='Loading…' />
-                                ) : (
-                                    <Localize i18n_default_text='Load in Bot Builder' />
-                                )}
-                            </button>
-                            <button
-                                type='button'
-                                className='free-bots__download'
-                                onClick={() => downloadBot(bot)}
-                            >
-                                <Localize i18n_default_text='Download XML' />
-                            </button>
-                        </div>
-                    </article>
-                ))}
             </div>
+
+            <details className='free-bots__other-bots'>
+                <summary>
+                    <Localize i18n_default_text='Other free bots and settings' />
+                </summary>
+                <section className='free-bots__settings' aria-label={localize('Settings for other free bots')}>
+                    <label>
+                        {localize('Market')}
+                        <select value={symbol} onChange={event => setSymbol(event.target.value)}>
+                            <option value='R_10'>Volatility 10 (1s)</option>
+                            <option value='R_25'>Volatility 25</option>
+                            <option value='R_50'>Volatility 50</option>
+                            <option value='R_75'>Volatility 75</option>
+                            <option value='R_100'>Volatility 100</option>
+                            <option value='JD10'>Jump 10</option>
+                            <option value='JD25'>Jump 25</option>
+                            <option value='JD50'>Jump 50</option>
+                            <option value='JD75'>Jump 75</option>
+                            <option value='JD100'>Jump 100</option>
+                        </select>
+                    </label>
+                    <label>{localize('Stake')}<input type='number' min='0.01' step='0.01' value={stake} onChange={e => setStake(e.target.value)} /></label>
+                    <label>{localize('Stop Loss')}<input type='number' min='0' step='0.01' value={stopLoss} onChange={e => setStopLoss(e.target.value)} /></label>
+                    <label>{localize('Take Profit')}<input type='number' min='0' step='0.01' value={takeProfit} onChange={e => setTakeProfit(e.target.value)} /></label>
+                    <label>
+                        {localize('Martingale')}
+                        <select value={martingale ? 'on' : 'off'} onChange={e => setMartingale(e.target.value === 'on')}>
+                            <option value='off'>{localize('Off')}</option>
+                            <option value='on'>{localize('On')}</option>
+                        </select>
+                    </label>
+                    {martingale && (
+                        <label>{localize('Multiplier')}<input type='number' min='1.01' step='0.1' value={martingaleMultiplier} onChange={e => setMartingaleMultiplier(e.target.value)} /></label>
+                    )}
+                    <label>
+                        {localize('Tick duration')}
+                        <select value={tickDuration} onChange={e => setTickDuration(e.target.value)}>
+                            {[1, 2, 3, 5, 10, 20, 50].map(ticks => (
+                                <option key={ticks} value={ticks}>{ticks === 1 ? localize('1 Tick') : localize('{{ticks}} Ticks', { ticks })}</option>
+                            ))}
+                        </select>
+                    </label>
+                </section>
+                <div className='free-bots__grid'>
+                    {FREE_BOT_TEMPLATES.map(bot => (
+                        <article className='free-bots__card' key={bot.id}>
+                            <h2>{bot.name}</h2>
+                            <p>{bot.description}</p>
+                            <label className='free-bots__count'>
+                                {localize('Consecutive tick entry count')}
+                                <input
+                                    type='number'
+                                    min='1'
+                                    max='100'
+                                    value={consecutiveTicks[bot.id] ?? bot.defaultConsecutiveTicks}
+                                    onChange={event =>
+                                        setConsecutiveTicks(current => ({
+                                            ...current,
+                                            [bot.id]: Math.max(1, Math.min(100, Number(event.target.value) || 1)),
+                                        }))
+                                    }
+                                />
+                            </label>
+                            {(bot.contractType === 'DIGITDIFF' ||
+                                bot.contractType === 'DIGITUNDER' ||
+                                bot.contractType === 'DIGITOVER') && (
+                                <label className='free-bots__count'>
+                                    {bot.contractType === 'DIGITDIFF'
+                                        ? localize('Entry digit and Differs target')
+                                        : bot.contractType === 'DIGITUNDER'
+                                          ? localize('Over entry threshold')
+                                          : localize('Under entry threshold')}
+                                    <select
+                                        value={targetDigits[bot.id] ?? '5'}
+                                        onChange={event =>
+                                            setTargetDigits(current => ({
+                                                ...current,
+                                                [bot.id]: event.target.value,
+                                            }))
+                                        }
+                                    >
+                                        {Array.from({ length: 10 }, (_, digit) => digit)
+                                            .filter(
+                                                digit =>
+                                                    bot.contractType === 'DIGITDIFF' ||
+                                                    (digit >= 1 && digit <= 8)
+                                            )
+                                            .map(digit => (
+                                                <option key={digit} value={digit}>
+                                                    {digit}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </label>
+                            )}
+                            <div className='free-bots__actions'>
+                                <button
+                                    type='button'
+                                    className='free-bots__button'
+                                    onClick={() => loadBot(bot)}
+                                    disabled={is_loading || !!loadingBotId}
+                                >
+                                    {loadingBotId === bot.id ? (
+                                        <Localize i18n_default_text='Loading…' />
+                                    ) : (
+                                        <Localize i18n_default_text='Load in Bot Builder' />
+                                    )}
+                                </button>
+                                <button
+                                    type='button'
+                                    className='free-bots__download'
+                                    onClick={() => downloadBot(bot)}
+                                >
+                                    <Localize i18n_default_text='Download XML' />
+                                </button>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </details>
 
             {feedback && (
                 <p className={feedbackIsError ? 'free-bots__feedback free-bots__feedback--error' : 'free-bots__feedback'} role={feedbackIsError ? 'alert' : 'status'}>
