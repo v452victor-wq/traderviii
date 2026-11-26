@@ -18,12 +18,52 @@ jest.mock('@/external/bot-skeleton', () => ({
 
 jest.mock('@/external/bot-skeleton/services/api/chart-api', () => ({
     __esModule: true,
-    default: { api: null },
+    default: { api: null, init: jest.fn() },
 }));
 
 describe('AnalysisTool', () => {
     afterEach(() => {
         chart_api.api = null;
+        jest.restoreAllMocks();
+    });
+
+    it('waits for the chart connection before subscribing when it is not ready yet', async () => {
+        let tickListener: ((message: unknown) => void) | undefined;
+        const api = {
+            send: jest.fn(async (request: { ticks_history?: string }) =>
+                request.ticks_history
+                    ? {
+                          history: { prices: [15.92] },
+                          pip_size: 2,
+                          subscription: { id: 'ticks-subscription' },
+                      }
+                    : {}
+            ),
+            onMessage: jest.fn(() => ({
+                subscribe: (listener: (message: unknown) => void) => {
+                    tickListener = listener;
+                    return { unsubscribe: jest.fn() };
+                },
+            })),
+        };
+        chart_api.api = null;
+        const initializeChartApi = jest.spyOn(chart_api, 'init').mockImplementation(async () => {
+            chart_api.api = api;
+        });
+
+        const { container } = render(<AnalysisTool />);
+
+        await waitFor(() => {
+            expect(initializeChartApi).toHaveBeenCalled();
+            expect(api.send).toHaveBeenCalledWith(
+                expect.objectContaining({ ticks_history: 'R_100', subscribe: 1 })
+            );
+            expect(
+                container.querySelectorAll('.live-digit-visualizer__item')[2]
+            ).toHaveClass('live-digit-visualizer__item--active');
+        });
+
+        expect(tickListener).toBeDefined();
     });
 
     it('includes ticks received during history loading and updates cumulative live stats', async () => {

@@ -18,6 +18,13 @@ type TickPrice = {
     pipSize?: number;
 };
 
+type AnalysisApi = {
+    onMessage: () => {
+        subscribe: (listener: (message: unknown) => void) => { unsubscribe: () => void };
+    };
+    send: (request: Record<string, unknown>) => Promise<unknown>;
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
@@ -58,10 +65,11 @@ const AnalysisTool = observer(() => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const api = chart_api.api;
-        if (!api || !symbol) return;
+        if (!symbol) return;
         let cancelled = false;
+        let api: AnalysisApi | undefined;
         let subscriptionId: string | undefined;
+        let messageSubscription: { unsubscribe: () => void } | undefined;
         const marketPipSize = markets.find(market => market.symbol === symbol)?.pipSize ?? 2;
         let effectivePipSize = marketPipSize;
         let latestTickPipSize: number | undefined;
@@ -75,14 +83,14 @@ const AnalysisTool = observer(() => {
         setPipSize(effectivePipSize);
 
         const forgetSubscription = () => {
-            if (!subscriptionId) return;
+            if (!api || !subscriptionId) return;
             api.send({ forget: subscriptionId }).catch((unsubscribeError: unknown) => {
                 console.error('Failed to unsubscribe from Analysis Tool tick data:', unsubscribeError);
             });
             subscriptionId = undefined;
         };
 
-        const messageSubscription = api.onMessage().subscribe((message: unknown) => {
+        const handleMessage = (message: unknown) => {
             const data = isRecord(message) && isRecord(message.data) ? message.data : null;
             const tick = isRecord(data?.tick) ? data.tick : null;
             const quote = tick?.quote;
@@ -112,20 +120,46 @@ const AnalysisTool = observer(() => {
             setTickSequence(current => current + 1);
             setPrices(current => [...current, quote].slice(-100));
             setDigitCounts(current => incrementDigitCount(current, quote, nextPipSize));
-        });
+        };
 
-        api.send({ ticks_history: symbol, count: 100, end: 'latest', style: 'ticks', subscribe: 1 })
-            .then((response: any) => {
-                subscriptionId = response?.subscription?.id;
+        const loadTicks = async () => {
+            try {
+                api = chart_api.api ?? api_base.api;
+                if (!api) {
+                    await chart_api.init();
+                    api = chart_api.api ?? api_base.api;
+                }
+                if (!api) throw new Error(localize('Live market connection is unavailable.'));
+                if (cancelled) return;
+
+                messageSubscription = api.onMessage().subscribe(handleMessage);
+                const response = await api.send({
+                    ticks_history: symbol,
+                    count: 100,
+                    end: 'latest',
+                    style: 'ticks',
+                    subscribe: 1,
+                });
+                const responseData = isRecord(response) ? response : null;
+                const subscription = isRecord(responseData?.subscription) ? responseData.subscription : null;
+                subscriptionId = typeof subscription?.id === 'string' ? subscription.id : undefined;
                 if (cancelled) {
                     forgetSubscription();
                     return;
                 }
-                if (response?.error) throw new Error(response.error.message);
-                const history = response?.history?.prices;
+                const responseError = isRecord(responseData?.error) ? responseData.error : null;
+                if (responseError) {
+                    throw new Error(
+                        typeof responseError.message === 'string'
+                            ? responseError.message
+                            : localize('Could not load tick history.')
+                    );
+                }
+                const historyData = isRecord(responseData?.history) ? responseData.history : null;
+                const history = historyData?.prices;
                 if (!Array.isArray(history)) throw new Error(localize('No tick history was returned.'));
                 const historyPipSize =
-                    typeof response.pip_size === 'number' ? response.pip_size : marketPipSize;
+                    typeof responseData?.pip_size === 'number' ? responseData.pip_size : marketPipSize;
                 effectivePipSize = latestTickPipSize ?? historyPipSize;
                 setPipSize(effectivePipSize);
                 const validHistory = history.filter(
@@ -138,20 +172,21 @@ const AnalysisTool = observer(() => {
                 setPrices(allTicks.map(({ quote }) => quote).slice(-100));
                 pendingTicks.length = 0;
                 historyLoaded = true;
-            })
-            .catch((requestError: unknown) => {
+            } catch (requestError: unknown) {
                 historyLoaded = true;
                 pendingTicks.length = 0;
                 forgetSubscription();
                 if (!cancelled) setError(requestError instanceof Error ? requestError.message : localize('Could not load tick history.'));
-            })
-            .finally(() => {
+            } finally {
                 if (!cancelled) setLoading(false);
-            });
+            }
+        };
+
+        void loadTicks();
 
         return () => {
             cancelled = true;
-            messageSubscription.unsubscribe();
+            messageSubscription?.unsubscribe();
             forgetSubscription();
         };
     }, [markets, symbol]);

@@ -7,6 +7,12 @@ import { Localize, localize } from '@deriv-com/translations';
 import { buildMasterBotXml, FREE_BOT_TEMPLATES } from './bot-templates';
 import './free-bots.scss';
 
+const fireStrategy = {
+    id: 'over-2-fire-and-under-7-fire',
+    name: 'Over 2 Fire and Under 7 Fire',
+    xmlUrl: '/strategies/over-2-fire-and-under-7-fire.xml',
+};
+
 const FreeBots = observer(() => {
     const { blockly_store, dashboard, load_modal, run_panel } = useStore();
     const { is_loading } = blockly_store;
@@ -28,6 +34,66 @@ const FreeBots = observer(() => {
         Object.fromEntries(FREE_BOT_TEMPLATES.map(bot => [bot.id, '5']))
     );
     const [symbol, setSymbol] = useState('R_100');
+
+    const loadFireStrategy = async () => {
+        const workspace = window.Blockly?.derivWorkspace;
+        if (is_loading || !workspace) {
+            setFeedback(localize('Bot Builder is still loading. Please try again in a moment.'));
+            setFeedbackIsError(true);
+            return;
+        }
+        if (is_running) {
+            setFeedback(localize('Stop the running bot before loading another strategy.'));
+            setFeedbackIsError(true);
+            return;
+        }
+        if (!window.confirm(localize('Loading this free bot replaces the current Bot Builder workspace. Continue?'))) {
+            return;
+        }
+
+        setLoadingBotId(fireStrategy.id);
+        setFeedback('');
+        setFeedbackIsError(false);
+        const strategyId = `free-${fireStrategy.id}-${Date.now()}`;
+
+        try {
+            const response = await fetch(fireStrategy.xmlUrl);
+            if (!response.ok) {
+                throw new Error(localize('Could not load the Over 2 Fire and Under 7 Fire strategy.'));
+            }
+            const xml = await response.text();
+            const xmlDocument = new DOMParser().parseFromString(xml, 'application/xml');
+            if (xmlDocument.querySelector('parsererror')) {
+                throw new Error(localize('The Over 2 Fire and Under 7 Fire strategy file is invalid.'));
+            }
+
+            await load_modal.loadStrategyToBuilder(
+                {
+                    id: strategyId,
+                    name: fireStrategy.name,
+                    save_type: save_types.UNSAVED,
+                    timestamp: Date.now(),
+                    xml,
+                },
+                false
+            );
+
+            if (workspace.current_strategy_id !== strategyId) {
+                throw new Error(localize('The selected bot could not be loaded. Please try again.'));
+            }
+
+            setActiveTab(DBOT_TABS.BOT_BUILDER);
+        } catch (error) {
+            setFeedback(
+                error instanceof Error
+                    ? error.message
+                    : localize('The Over 2 Fire and Under 7 Fire strategy could not be loaded.')
+            );
+            setFeedbackIsError(true);
+        } finally {
+            setLoadingBotId('');
+        }
+    };
 
     const loadBot = async (bot: (typeof FREE_BOT_TEMPLATES)[number]) => {
         const workspace = window.Blockly?.derivWorkspace;
@@ -163,6 +229,35 @@ const FreeBots = observer(() => {
             </section>
 
             <div className='free-bots__grid'>
+                <article className='free-bots__card' key={fireStrategy.id}>
+                    <h2>{fireStrategy.name}</h2>
+                    <p>
+                        {localize(
+                            'Flat $0.35 stake, 1-tick contracts, automatic Over 2 / Under 7 entry triggers, Even/Odd recovery, and $5 profit/loss limits.'
+                        )}
+                    </p>
+                    <div className='free-bots__actions'>
+                        <button
+                            type='button'
+                            className='free-bots__button'
+                            onClick={loadFireStrategy}
+                            disabled={is_loading || !!loadingBotId}
+                        >
+                            {loadingBotId === fireStrategy.id ? (
+                                <Localize i18n_default_text='Loading…' />
+                            ) : (
+                                <Localize i18n_default_text='Load in Bot Builder' />
+                            )}
+                        </button>
+                        <a
+                            className='free-bots__download'
+                            href={fireStrategy.xmlUrl}
+                            download={`${fireStrategy.id}.xml`}
+                        >
+                            <Localize i18n_default_text='Download XML' />
+                        </a>
+                    </div>
+                </article>
                 {FREE_BOT_TEMPLATES.map(bot => (
                     <article className='free-bots__card' key={bot.id}>
                         <h2>{bot.name}</h2>
