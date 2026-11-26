@@ -1,6 +1,7 @@
 import { localize } from '@deriv-com/translations';
 import { getContractTypeOptions } from '../../../shared';
 import { excludeOptionFromContextMenu, modifyContextMenu } from '../../../utils';
+import { getInitialPurchaseOptions } from './purchase-options';
 
 window.Blockly.Blocks.purchase = {
     init() {
@@ -30,7 +31,7 @@ window.Blockly.Blocks.purchase = {
                 {
                     type: 'field_dropdown',
                     name: 'PURCHASE_LIST',
-                    options: [['', '']],
+                    options: getInitialPurchaseOptions(),
                 },
             ],
             previousStatement: null,
